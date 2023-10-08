@@ -1,5 +1,483 @@
+diff --git a/build-script/cronet-build.patch b/build-script/cronet-build.patch
+index d5d944af..e69de29b 100644
+--- a/build-script/cronet-build.patch
++++ b/build-script/cronet-build.patch
+@@ -1,748 +0,0 @@
+--diff --git a/chromium/BUILD.gn b/chromium/BUILD.gn
+--index aba7412d..113041d0 100644
+----- a/chromium/BUILD.gn
+--+++ b/chromium/BUILD.gn
+--@@ -48,7 +48,7 @@ group("gn_all") {
+--   testonly = true
+-- 
+--   deps = [
+---    "//net",
+--+    "//components/cronet"
+--   ]
+-- }
+-- 
+--diff --git a/chromium/components/cronet/BUILD.gn b/chromium/components/cronet/BUILD.gn
+--index a5a8c142..984530e6 100644
+----- a/chromium/components/cronet/BUILD.gn
+--+++ b/chromium/components/cronet/BUILD.gn
+--@@ -9,7 +9,6 @@ import("//build/util/process_version.gni")
+-- import("//chrome/version.gni")
+-- import("//components/cronet/native/include/headers.gni")
+-- import("//components/grpc_support/include/headers.gni")
+---import("//testing/test.gni")
+-- 
+-- declare_args() {
+--   # If set to true, this will remove histogram manager to reduce binary size.
+--@@ -57,7 +56,6 @@ source_set("cronet_common") {
+--     ":cronet_buildflags",
+--     ":cronet_version_header",
+--     "//base",
+---    "//components/prefs:prefs",
+--     "//net",
+--   ]
+-- 
+--@@ -74,23 +72,6 @@ source_set("metrics_util") {
+--   deps = [ "//base" ]
+-- }
+-- 
+---# Unit tests for Cronet common implementation.
+---source_set("cronet_common_unittests") {
+---  testonly = true
+---
+---  deps = [
+---    ":cronet_common",
+---    "//components/prefs:test_support",
+---    "//net:test_support",
+---  ]
+---
+---  sources = [
+---    "host_cache_persistence_manager_unittest.cc",
+---    "network_tasks_unittest.cc",
+---    "stale_host_resolver_unittest.cc",
+---    "url_request_context_config_unittest.cc",
+---  ]
+---}
+-- 
+-- # For platforms on which the native Cronet library is used, build the library,
+-- # a cronet_tests binary that exercises it, and a unit-tests binary.
+--@@ -138,49 +119,6 @@ if (is_android) {
+--     }
+--   }
+-- 
+---  test("cronet_tests") {
+---    deps = [
+---      ":cronet_common",
+---      "//base",
+---      "//base/test:test_support",
+---      "//components/cronet/native:cronet_native_impl",
+---      "//components/cronet/native/test:cronet_native_tests",
+---      "//net",
+---    ]
+---
+---    sources = [
+---      "cronet_global_state_stubs.cc",
+---      "run_all_unittests.cc",
+---    ]
+---
+---    defines = [ "CRONET_TESTS_IMPLEMENTATION" ]
+---
+---    if ((is_linux || is_chromeos) && !is_component_build) {
+---      public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
+---    }
+---
+---    if (is_fuchsia) {
+---      additional_manifest_fragments =
+---          [ "//build/config/fuchsia/test/network.shard.test-cml" ]
+---    }
+---  }
+---
+---  test("cronet_unittests") {
+---    deps = [
+---      ":cronet_common",
+---      ":cronet_common_unittests",
+---      "//base",
+---      "//base/test:test_support",
+---      "//components/cronet/native:cronet_native_unittests",
+---      "//net",
+---    ]
+---
+---    sources = [
+---      "cronet_global_state_stubs.cc",
+---      "run_all_unittests.cc",
+---    ]
+---  }
+---
+--   _package_dir = "$root_out_dir/cronet"
+-- 
+--   # Generate LICENSE file by recursively joining all dependent licenses.
+--@@ -226,22 +164,6 @@ if (is_android) {
+--     ]
+--   }
+-- 
+---  executable("cronet_native_perf_test") {
+---    testonly = true
+---    sources = [
+---      "native/perftest/main.cc",
+---      "native/perftest/perf_test.cc",
+---    ]
+---    deps = [
+---      "//base",
+---      "//components/cronet",
+---      "//components/cronet/native:cronet_native_headers",
+---      "//components/cronet/native/test:cronet_native_tests",
+---      "//components/cronet/native/test:cronet_native_testutil",
+---      "//net:test_support",
+---    ]
+---  }
+---
+--   executable("cronet_sample") {
+--     testonly = true
+--     sources = [
+--@@ -260,11 +182,4 @@ if (is_android) {
+--     }
+--   }
+-- 
+---  test("cronet_sample_test") {
+---    sources = [ "native/sample/test/sample_test.cc" ]
+---    deps = [
+---      ":cronet_sample",
+---      "//testing/gtest:gtest",
+---    ]
+---  }
+-- }
+--diff --git a/chromium/components/cronet/native/BUILD.gn b/chromium/components/cronet/native/BUILD.gn
+--index fb83586f..540a996a 100644
+----- a/chromium/components/cronet/native/BUILD.gn
+--+++ b/chromium/components/cronet/native/BUILD.gn
+--@@ -4,7 +4,6 @@
+-- 
+-- import("//components/cronet/native/include/headers.gni")
+-- import("//components/grpc_support/include/headers.gni")
+---import("//testing/test.gni")
+-- 
+-- config("cronet_native_include_config") {
+--   include_dirs = [
+--@@ -70,29 +69,3 @@ source_set("cronet_native_impl") {
+--     "generated/cronet.idl_impl_struct.cc",
+--   ]
+-- }
+---
+---# Unit tests for Cronet native API. Depends on cronet_native_impl to test
+---# implementation details.
+---source_set("cronet_native_unittests") {
+---  testonly = true
+---
+---  deps = [
+---    ":cronet_native_impl",
+---    "//base/test:test_support",
+---    "//components/cronet/native/test:cronet_native_testutil",
+---    "//net:test_support",
+---    "//testing/gtest",
+---  ]
+---
+---  configs += [ ":cronet_native_include_config" ]
+---
+---  sources = [
+---    "engine_unittest.cc",
+---    "native_metrics_util_test.cc",
+---    "runnables_unittest.cc",
+---
+---    # Generated from cronet.idl.
+---    "generated/cronet.idl_impl_interface_unittest.cc",
+---    "generated/cronet.idl_impl_struct_unittest.cc",
+---  ]
+---}
+--diff --git a/chromium/components/cronet/native/test/BUILD.gn b/chromium/components/cronet/native/test/BUILD.gn
+--deleted file mode 100644
+--index 74e3b0e4..00000000
+----- a/chromium/components/cronet/native/test/BUILD.gn
+--+++ /dev/null
+--@@ -1,60 +0,0 @@
+---# Copyright 2017 The Chromium Authors
+---# Use of this source code is governed by a BSD-style license that can be
+---# found in the LICENSE file.
+---
+---import("//components/cronet/native/include/headers.gni")
+---import("//testing/test.gni")
+---
+---source_set("cronet_native_testutil") {
+---  testonly = true
+---
+---  deps = [
+---    "//base",
+---    "//components/cronet/native:cronet_native_headers",
+---    "//net:test_support",
+---  ]
+---
+---  configs += [ "//components/cronet/native:cronet_native_include_config" ]
+---  public_configs = [ "//components/cronet/native:cronet_native_include_config" ]
+---
+---  sources = [
+---    "test_util.cc",
+---    "test_util.h",
+---  ]
+---}
+---
+---# Tests for publicly exported Cronet Native API. This target does NOT depend on
+---# cronet_native_impl to prevent static linking of implementation into test app.
+---source_set("cronet_native_tests") {
+---  testonly = true
+---
+---  deps = [
+---    ":cronet_native_testutil",
+---    "//base",
+---    "//base/allocator:buildflags",
+---    "//base/test:test_support",
+---    "//components/cronet/native:cronet_native_headers",
+---    "//components/cronet/testing:test_support",
+---    "//components/grpc_support:bidirectional_stream_test",
+---    "//components/grpc_support/test:get_stream_engine_header",
+---    "//net:test_support",
+---    "//testing/gmock",
+---    "//testing/gtest",
+---  ]
+---
+---  configs += [ "//components/cronet/native:cronet_native_include_config" ]
+---
+---  sources = [
+---    "buffer_test.cc",
+---    "engine_test.cc",
+---    "executors_test.cc",
+---    "test_request_finished_info_listener.cc",
+---    "test_request_finished_info_listener.h",
+---    "test_stream_engine.cc",
+---    "test_upload_data_provider.cc",
+---    "test_upload_data_provider.h",
+---    "test_url_request_callback.cc",
+---    "test_url_request_callback.h",
+---    "url_request_test.cc",
+---  ]
+---}
+--diff --git a/chromium/components/grpc_support/BUILD.gn b/chromium/components/grpc_support/BUILD.gn
+--index 133aa301..1f3ca6fb 100644
+----- a/chromium/components/grpc_support/BUILD.gn
+--+++ b/chromium/components/grpc_support/BUILD.gn
+--@@ -17,33 +17,3 @@ source_set("grpc_support") {
+--     "//url",
+--   ]
+-- }
+---
+---# Depends on ":grpc_support" implementation.
+---source_set("bidirectional_stream_unittest") {
+---  testonly = true
+---  sources = [ "bidirectional_stream_unittest.cc" ]
+---
+---  deps = [
+---    ":grpc_support",
+---    "//base",
+---    "//net",
+---    "//net:test_support",
+---  ]
+---
+---  public_deps = [ "//components/grpc_support/test:get_stream_engine_header" ]
+---}
+---
+---# Depends on ":headers" to avoid ":grpc_support" implementation.
+---source_set("bidirectional_stream_test") {
+---  testonly = true
+---  sources = [ "bidirectional_stream_unittest.cc" ]
+---
+---  deps = [
+---    ":headers",
+---    "//base",
+---    "//net",
+---    "//net:test_support",
+---  ]
+---
+---  public_deps = [ "//components/grpc_support/test:get_stream_engine_header" ]
+---}
+--diff --git a/chromium/components/prefs/BUILD.gn b/chromium/components/prefs/BUILD.gn
+--deleted file mode 100644
+--index 2d48b091..00000000
+----- a/chromium/components/prefs/BUILD.gn
+--+++ /dev/null
+--@@ -1,121 +0,0 @@
+---# Copyright 2015 The Chromium Authors
+---# Use of this source code is governed by a BSD-style license that can be
+---# found in the LICENSE file.
+---
+---import("//build/config/chromeos/ui_mode.gni")
+---
+---component("prefs") {
+---  sources = [
+---    "command_line_pref_store.cc",
+---    "command_line_pref_store.h",
+---    "default_pref_store.cc",
+---    "default_pref_store.h",
+---    "in_memory_pref_store.cc",
+---    "in_memory_pref_store.h",
+---    "json_pref_store.cc",
+---    "json_pref_store.h",
+---    "overlay_user_pref_store.cc",
+---    "overlay_user_pref_store.h",
+---    "persistent_pref_store.cc",
+---    "persistent_pref_store.h",
+---    "pref_change_registrar.cc",
+---    "pref_change_registrar.h",
+---    "pref_filter.h",
+---    "pref_member.cc",
+---    "pref_member.h",
+---    "pref_name_set.h",
+---    "pref_notifier.h",
+---    "pref_notifier_impl.cc",
+---    "pref_notifier_impl.h",
+---    "pref_observer.h",
+---    "pref_registry.cc",
+---    "pref_registry.h",
+---    "pref_registry_simple.cc",
+---    "pref_registry_simple.h",
+---    "pref_service.cc",
+---    "pref_service.h",
+---    "pref_service_factory.cc",
+---    "pref_service_factory.h",
+---    "pref_store.cc",
+---    "pref_store.h",
+---    "pref_value_map.cc",
+---    "pref_value_map.h",
+---    "pref_value_store.cc",
+---    "pref_value_store.h",
+---    "prefs_export.h",
+---    "scoped_user_pref_update.cc",
+---    "scoped_user_pref_update.h",
+---    "segregated_pref_store.cc",
+---    "segregated_pref_store.h",
+---    "value_map_pref_store.cc",
+---    "value_map_pref_store.h",
+---    "writeable_pref_store.cc",
+---    "writeable_pref_store.h",
+---  ]
+---
+---  defines = [ "COMPONENTS_PREFS_IMPLEMENTATION" ]
+---
+---  deps = [ "//build:chromeos_buildflags" ]
+---
+---  public_deps = [ "//base" ]
+---
+---  if (is_android) {
+---    sources += [
+---      "android/pref_service_android.cc",
+---      "android/pref_service_android.h",
+---    ]
+---    deps += [ "android:jni_headers" ]
+---  }
+---}
+---
+---static_library("test_support") {
+---  testonly = true
+---  sources = [
+---    "mock_pref_change_callback.cc",
+---    "mock_pref_change_callback.h",
+---    "pref_store_observer_mock.cc",
+---    "pref_store_observer_mock.h",
+---    "pref_test_utils.cc",
+---    "pref_test_utils.h",
+---    "testing_pref_service.cc",
+---    "testing_pref_service.h",
+---    "testing_pref_store.cc",
+---    "testing_pref_store.h",
+---  ]
+---
+---  public_deps = [ ":prefs" ]
+---  deps = [
+---    "//base",
+---    "//base/test:test_support",
+---    "//testing/gmock",
+---    "//testing/gtest",
+---  ]
+---}
+---
+---source_set("unit_tests") {
+---  testonly = true
+---  sources = [
+---    "default_pref_store_unittest.cc",
+---    "in_memory_pref_store_unittest.cc",
+---    "json_pref_store_unittest.cc",
+---    "overlay_user_pref_store_unittest.cc",
+---    "persistent_pref_store_unittest.cc",
+---    "persistent_pref_store_unittest.h",
+---    "pref_change_registrar_unittest.cc",
+---    "pref_member_unittest.cc",
+---    "pref_notifier_impl_unittest.cc",
+---    "pref_service_unittest.cc",
+---    "pref_value_map_unittest.cc",
+---    "pref_value_store_unittest.cc",
+---    "scoped_user_pref_update_unittest.cc",
+---    "segregated_pref_store_unittest.cc",
+---  ]
+---
+---  deps = [
+---    ":test_support",
+---    "//base",
+---    "//base/test:test_support",
+---    "//testing/gmock",
+---    "//testing/gtest",
+---  ]
+---}
+--diff --git a/chromium/components/prefs/android/BUILD.gn b/chromium/components/prefs/android/BUILD.gn
+--deleted file mode 100644
+--index 29151aaa..00000000
+----- a/chromium/components/prefs/android/BUILD.gn
+--+++ /dev/null
+--@@ -1,32 +0,0 @@
+---# Copyright 2020 The Chromium Authors
+---# Use of this source code is governed by a BSD-style license that can be
+---# found in the LICENSE file.
+---
+---import("//build/config/android/rules.gni")
+---
+---generate_jni("jni_headers") {
+---  sources = [ "java/src/org/chromium/components/prefs/PrefService.java" ]
+---}
+---
+---android_library("java") {
+---  srcjar_deps = [ ":jni_headers" ]
+---  sources = [ "java/src/org/chromium/components/prefs/PrefService.java" ]
+---  deps = [
+---    "//base:jni_java",
+---    "//build/android:build_java",
+---    "//third_party/androidx:androidx_annotation_annotation_java",
+---  ]
+---}
+---
+---robolectric_library("junit") {
+---  sources = [ "java/src/org/chromium/components/prefs/PrefServiceTest.java" ]
+---  deps = [
+---    ":java",
+---    "//base:base_java_test_support",
+---    "//base:base_junit_test_support",
+---    "//base:jni_java",
+---    "//base/test:test_support_java",
+---    "//third_party/junit",
+---    "//third_party/mockito:mockito_java",
+---  ]
+---}
+--diff --git a/chromium/components/prefs/ios/BUILD.gn b/chromium/components/prefs/ios/BUILD.gn
+--deleted file mode 100644
+--index 6500a4de..00000000
+----- a/chromium/components/prefs/ios/BUILD.gn
+--+++ /dev/null
+--@@ -1,14 +0,0 @@
+---# Copyright 2018 The Chromium Authors
+---# Use of this source code is governed by a BSD-style license that can be
+---# found in the LICENSE file.
+---
+---source_set("ios") {
+---  sources = [
+---    "pref_observer_bridge.h",
+---    "pref_observer_bridge.mm",
+---  ]
+---  deps = [
+---    "//base",
+---    "//components/prefs",
+---  ]
+---}
 -diff --git a/chromium/BUILD.gn b/chromium/BUILD.gn
--index aba7412d..113041d0 100644
+-index aba7412d..221673e1 100644
 ---- a/chromium/BUILD.gn
 -+++ b/chromium/BUILD.gn
 -@@ -48,7 +48,7 @@ group("gn_all") {
@@ -7,12 +485,12 @@
 - 
 -   deps = [
 --    "//net",
--+    "//components/cronet"
+-+    "//components/cronet",
 -   ]
 - }
 - 
 -diff --git a/chromium/components/cronet/BUILD.gn b/chromium/components/cronet/BUILD.gn
--index a5a8c142..984530e6 100644
+-index a5a8c142..8a2635fd 100644
 ---- a/chromium/components/cronet/BUILD.gn
 -+++ b/chromium/components/cronet/BUILD.gn
 -@@ -9,7 +9,6 @@ import("//build/util/process_version.gni")
@@ -23,15 +501,7 @@
 - 
 - declare_args() {
 -   # If set to true, this will remove histogram manager to reduce binary size.
--@@ -57,7 +56,6 @@ source_set("cronet_common") {
--     ":cronet_buildflags",
--     ":cronet_version_header",
--     "//base",
---    "//components/prefs:prefs",
--     "//net",
--   ]
-- 
--@@ -74,23 +72,6 @@ source_set("metrics_util") {
+-@@ -74,24 +73,6 @@ source_set("metrics_util") {
 -   deps = [ "//base" ]
 - }
 - 
@@ -52,9 +522,10 @@
 --    "url_request_context_config_unittest.cc",
 --  ]
 --}
-- 
+--
 - # For platforms on which the native Cronet library is used, build the library,
 - # a cronet_tests binary that exercises it, and a unit-tests binary.
+- # Android and iOS have their own platform-specific rules to build Cronet.
 -@@ -138,49 +119,6 @@ if (is_android) {
 -     }
 -   }
@@ -105,7 +576,7 @@
 -   _package_dir = "$root_out_dir/cronet"
 - 
 -   # Generate LICENSE file by recursively joining all dependent licenses.
--@@ -226,22 +164,6 @@ if (is_android) {
+-@@ -226,21 +164,6 @@ if (is_android) {
 -     ]
 -   }
 - 
@@ -124,14 +595,14 @@
 --      "//net:test_support",
 --    ]
 --  }
---
+- 
 -   executable("cronet_sample") {
 -     testonly = true
--     sources = [
--@@ -260,11 +182,4 @@ if (is_android) {
+-@@ -259,12 +182,4 @@ if (is_android) {
+-       public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
 -     }
 -   }
-- 
+--
 --  test("cronet_sample_test") {
 --    sources = [ "native/sample/test/sample_test.cc" ]
 --    deps = [
@@ -182,72 +653,6 @@
 --    "generated/cronet.idl_impl_struct_unittest.cc",
 --  ]
 --}
--diff --git a/chromium/components/cronet/native/test/BUILD.gn b/chromium/components/cronet/native/test/BUILD.gn
--deleted file mode 100644
--index 74e3b0e4..00000000
----- a/chromium/components/cronet/native/test/BUILD.gn
--+++ /dev/null
--@@ -1,60 +0,0 @@
---# Copyright 2017 The Chromium Authors
---# Use of this source code is governed by a BSD-style license that can be
---# found in the LICENSE file.
---
---import("//components/cronet/native/include/headers.gni")
---import("//testing/test.gni")
---
---source_set("cronet_native_testutil") {
---  testonly = true
---
---  deps = [
---    "//base",
---    "//components/cronet/native:cronet_native_headers",
---    "//net:test_support",
---  ]
---
---  configs += [ "//components/cronet/native:cronet_native_include_config" ]
---  public_configs = [ "//components/cronet/native:cronet_native_include_config" ]
---
---  sources = [
---    "test_util.cc",
---    "test_util.h",
---  ]
---}
---
---# Tests for publicly exported Cronet Native API. This target does NOT depend on
---# cronet_native_impl to prevent static linking of implementation into test app.
---source_set("cronet_native_tests") {
---  testonly = true
---
---  deps = [
---    ":cronet_native_testutil",
---    "//base",
---    "//base/allocator:buildflags",
---    "//base/test:test_support",
---    "//components/cronet/native:cronet_native_headers",
---    "//components/cronet/testing:test_support",
---    "//components/grpc_support:bidirectional_stream_test",
---    "//components/grpc_support/test:get_stream_engine_header",
---    "//net:test_support",
---    "//testing/gmock",
---    "//testing/gtest",
---  ]
---
---  configs += [ "//components/cronet/native:cronet_native_include_config" ]
---
---  sources = [
---    "buffer_test.cc",
---    "engine_test.cc",
---    "executors_test.cc",
---    "test_request_finished_info_listener.cc",
---    "test_request_finished_info_listener.h",
---    "test_stream_engine.cc",
---    "test_upload_data_provider.cc",
---    "test_upload_data_provider.h",
---    "test_url_request_callback.cc",
---    "test_url_request_callback.h",
---    "url_request_test.cc",
---  ]
---}
 -diff --git a/chromium/components/grpc_support/BUILD.gn b/chromium/components/grpc_support/BUILD.gn
 -index 133aa301..1f3ca6fb 100644
 ---- a/chromium/components/grpc_support/BUILD.gn
@@ -287,80 +692,13 @@
 --  public_deps = [ "//components/grpc_support/test:get_stream_engine_header" ]
 --}
 -diff --git a/chromium/components/prefs/BUILD.gn b/chromium/components/prefs/BUILD.gn
--deleted file mode 100644
--index 2d48b091..00000000
+-index 2d48b091..9ca1c606 100644
 ---- a/chromium/components/prefs/BUILD.gn
--+++ /dev/null
--@@ -1,121 +0,0 @@
---# Copyright 2015 The Chromium Authors
---# Use of this source code is governed by a BSD-style license that can be
---# found in the LICENSE file.
---
---import("//build/config/chromeos/ui_mode.gni")
---
---component("prefs") {
---  sources = [
---    "command_line_pref_store.cc",
---    "command_line_pref_store.h",
---    "default_pref_store.cc",
---    "default_pref_store.h",
---    "in_memory_pref_store.cc",
---    "in_memory_pref_store.h",
---    "json_pref_store.cc",
---    "json_pref_store.h",
---    "overlay_user_pref_store.cc",
---    "overlay_user_pref_store.h",
---    "persistent_pref_store.cc",
---    "persistent_pref_store.h",
---    "pref_change_registrar.cc",
---    "pref_change_registrar.h",
---    "pref_filter.h",
---    "pref_member.cc",
---    "pref_member.h",
---    "pref_name_set.h",
---    "pref_notifier.h",
---    "pref_notifier_impl.cc",
---    "pref_notifier_impl.h",
---    "pref_observer.h",
---    "pref_registry.cc",
---    "pref_registry.h",
---    "pref_registry_simple.cc",
---    "pref_registry_simple.h",
---    "pref_service.cc",
---    "pref_service.h",
---    "pref_service_factory.cc",
---    "pref_service_factory.h",
---    "pref_store.cc",
---    "pref_store.h",
---    "pref_value_map.cc",
---    "pref_value_map.h",
---    "pref_value_store.cc",
---    "pref_value_store.h",
---    "prefs_export.h",
---    "scoped_user_pref_update.cc",
---    "scoped_user_pref_update.h",
---    "segregated_pref_store.cc",
---    "segregated_pref_store.h",
---    "value_map_pref_store.cc",
---    "value_map_pref_store.h",
---    "writeable_pref_store.cc",
---    "writeable_pref_store.h",
---  ]
---
---  defines = [ "COMPONENTS_PREFS_IMPLEMENTATION" ]
---
---  deps = [ "//build:chromeos_buildflags" ]
---
---  public_deps = [ "//base" ]
---
---  if (is_android) {
---    sources += [
---      "android/pref_service_android.cc",
---      "android/pref_service_android.h",
---    ]
---    deps += [ "android:jni_headers" ]
---  }
---}
+-+++ b/chromium/components/prefs/BUILD.gn
+-@@ -67,55 +67,3 @@ component("prefs") {
+-     deps += [ "android:jni_headers" ]
+-   }
+- }
 --
 --static_library("test_support") {
 --  testonly = true
@@ -413,64 +751,6 @@
 --    "//testing/gtest",
 --  ]
 --}
--diff --git a/chromium/components/prefs/android/BUILD.gn b/chromium/components/prefs/android/BUILD.gn
--deleted file mode 100644
--index 29151aaa..00000000
----- a/chromium/components/prefs/android/BUILD.gn
--+++ /dev/null
--@@ -1,32 +0,0 @@
---# Copyright 2020 The Chromium Authors
---# Use of this source code is governed by a BSD-style license that can be
---# found in the LICENSE file.
---
---import("//build/config/android/rules.gni")
---
---generate_jni("jni_headers") {
---  sources = [ "java/src/org/chromium/components/prefs/PrefService.java" ]
---}
---
---android_library("java") {
---  srcjar_deps = [ ":jni_headers" ]
---  sources = [ "java/src/org/chromium/components/prefs/PrefService.java" ]
---  deps = [
---    "//base:jni_java",
---    "//build/android:build_java",
---    "//third_party/androidx:androidx_annotation_annotation_java",
---  ]
---}
---
---robolectric_library("junit") {
---  sources = [ "java/src/org/chromium/components/prefs/PrefServiceTest.java" ]
---  deps = [
---    ":java",
---    "//base:base_java_test_support",
---    "//base:base_junit_test_support",
---    "//base:jni_java",
---    "//base/test:test_support_java",
---    "//third_party/junit",
---    "//third_party/mockito:mockito_java",
---  ]
---}
--diff --git a/chromium/components/prefs/ios/BUILD.gn b/chromium/components/prefs/ios/BUILD.gn
--deleted file mode 100644
--index 6500a4de..00000000
----- a/chromium/components/prefs/ios/BUILD.gn
--+++ /dev/null
--@@ -1,14 +0,0 @@
---# Copyright 2018 The Chromium Authors
---# Use of this source code is governed by a BSD-style license that can be
---# found in the LICENSE file.
---
---source_set("ios") {
---  sources = [
---    "pref_observer_bridge.h",
---    "pref_observer_bridge.mm",
---  ]
---  deps = [
---    "//base",
---    "//components/prefs",
---  ]
---}
 diff --git a/chromium/BUILD.gn b/chromium/BUILD.gn
 index aba7412d..221673e1 100644
 --- a/chromium/BUILD.gn
@@ -485,10 +765,17 @@ index aba7412d..221673e1 100644
  }
  
 diff --git a/chromium/components/cronet/BUILD.gn b/chromium/components/cronet/BUILD.gn
-index a5a8c142..8a2635fd 100644
+index a5a8c142..0fb3ff91 100644
 --- a/chromium/components/cronet/BUILD.gn
 +++ b/chromium/components/cronet/BUILD.gn
-@@ -9,7 +9,6 @@ import("//build/util/process_version.gni")
+@@ -3,13 +3,13 @@
+ # found in the LICENSE file.
+ 
+ import("//build/buildflag_header.gni")
++import("//build/config/c++/c++.gni")
+ import("//build/toolchain/toolchain.gni")
+ import("//build/util/lastchange.gni")
+ import("//build/util/process_version.gni")
  import("//chrome/version.gni")
  import("//components/cronet/native/include/headers.gni")
  import("//components/grpc_support/include/headers.gni")
@@ -496,7 +783,7 @@ index a5a8c142..8a2635fd 100644
  
  declare_args() {
    # If set to true, this will remove histogram manager to reduce binary size.
-@@ -74,24 +73,6 @@ source_set("metrics_util") {
+@@ -74,37 +74,145 @@ source_set("metrics_util") {
    deps = [ "//base" ]
  }
  
@@ -521,7 +808,148 @@ index a5a8c142..8a2635fd 100644
  # For platforms on which the native Cronet library is used, build the library,
  # a cronet_tests binary that exercises it, and a unit-tests binary.
  # Android and iOS have their own platform-specific rules to build Cronet.
-@@ -138,49 +119,6 @@ if (is_android) {
+-if (is_android) {
++if (false) {
+   group("cronet_package") {
+     testonly = true
+     deps = [ "//components/cronet/android:cronet_package_android" ]
+   }
+-} else if (is_ios) {
++} else if (false) {
+   group("cronet_package") {
+     deps = [ "//components/cronet/ios:cronet_package_ios" ]
+   }
+ } else {
++  static_library("cronet_static") {
++    deps = [
++      "//base",
++      "//components/cronet:cronet_common",
++      "//components/cronet/native:cronet_native_impl",
++      "//net",
++    ]
++
++    if (use_custom_libcxx) {
++      deps += [
++      # Add shared_library_deps to include custom libc++ into dependencies.
++      # They are by default only added to executable(), loadable_module(), and
++      # shared_library() targets, but cronet_static_complete library needs it as well to
++      # avoid linking with different versions of libc++.
++        "//build/config:shared_library_deps",
++      ]
++    }
++
++    sources = [ "cronet_global_state_stubs.cc" ]
++
++    complete_static_lib = true
++    configs -= [ "//build/config/compiler:thin_archive" ]
++  }
++
++  executable("cronet_example") {
++    testonly = true
++    sources = [
++      "native/sample/main.cc",
++      "native/sample/sample_executor.cc",
++      "native/sample/sample_executor.h",
++      "native/sample/sample_url_request_callback.cc",
++      "native/sample/sample_url_request_callback.h",
++    ]
++    deps = [
++      "//components/cronet",
++      "//components/cronet/native:cronet_native_headers",
++    ]
++    if ((is_linux || is_chromeos) && !is_component_build) {
++      public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
++    }
++  }
++
++  executable("cronet_example_external") {
++    testonly = true
++    no_default_deps = true
++    sources = [
++      "native/sample/main.cc",
++      "native/sample/sample_executor.cc",
++      "native/sample/sample_executor.h",
++      "native/sample/sample_url_request_callback.cc",
++      "native/sample/sample_url_request_callback.h",
++    ]
++    deps = [ ":cronet" ]
++    configs -= [
++      "//build/config:feature_flags",
++      "//build/config/compiler:afdo",
++      "//build/config/compiler:afdo_optimize_size",
++      "//build/config/compiler:cet_shadow_stack",
++      "//build/config/compiler:chromium_code",
++      "//build/config/compiler:default_include_dirs",
++      "//build/config/compiler:default_init_stack_vars",
++      "//build/config/compiler:default_optimization",
++      "//build/config/compiler:default_stack_frames",
++      "//build/config/compiler:default_symbols",
++      "//build/config/compiler:no_exceptions",
++      "//build/config/compiler:no_rtti",
++      "//build/config/compiler:runtime_library",
++      "//build/config/compiler:thin_archive",
++      "//build/config/compiler/pgo:default_pgo_flags",
++      "//build/config/coverage:default_coverage",
++      "//build/config/sanitizers:default_sanitizer_flags",
++      "//build/config/clang:find_bad_constructs",
++      "//build/config/clang:extra_warnings",
++    ]
++    configs += [ "//components/cronet/native:cronet_native_include_config" ]
++    if (is_linux) {
++      configs += [ "//build/config/linux:runtime_library" ]
++    } else if (is_mac) {
++      configs += [ "//build/config/mac:runtime_library" ]
++    } else if (is_android) {
++      configs += [ "//build/config/android:runtime_library" ]
++    }
++  }
++
++  executable("cronet_example_external_static") {
++    testonly = true
++    no_default_deps = true
++    sources = [
++      "native/sample/main.cc",
++      "native/sample/sample_executor.cc",
++      "native/sample/sample_executor.h",
++      "native/sample/sample_url_request_callback.cc",
++      "native/sample/sample_url_request_callback.h",
++    ]
++    deps = [ ":cronet_static" ]
++    configs -= [
++      "//build/config:feature_flags",
++      "//build/config/compiler:afdo",
++      "//build/config/compiler:afdo_optimize_size",
++      "//build/config/compiler:cet_shadow_stack",
++      "//build/config/compiler:chromium_code",
++      "//build/config/compiler:default_include_dirs",
++      "//build/config/compiler:default_init_stack_vars",
++      "//build/config/compiler:default_optimization",
++      "//build/config/compiler:default_stack_frames",
++      "//build/config/compiler:default_symbols",
++      "//build/config/compiler:no_exceptions",
++      "//build/config/compiler:no_rtti",
++      "//build/config/compiler:runtime_library",
++      "//build/config/compiler:thin_archive",
++      "//build/config/compiler/pgo:default_pgo_flags",
++      "//build/config/coverage:default_coverage",
++      "//build/config/sanitizers:default_sanitizer_flags",
++      "//build/config/clang:find_bad_constructs",
++      "//build/config/clang:extra_warnings",
++    ]
++    configs += [ "//components/cronet/native:cronet_native_include_config" ]
++    if (is_linux) {
++      configs += [ "//build/config/linux:runtime_library" ]
++    } else if (is_mac) {
++      configs += [ "//build/config/mac:runtime_library" ]
++    } else if (is_android) {
++      configs += [ "//build/config/android:runtime_library" ]
++    }
++  }
++
+   config("shared_library_public_config") {
+     if (is_mac && !is_component_build) {
+       # Executable targets that depend on the shared libraries below need to have
+@@ -138,49 +246,6 @@ if (is_android) {
      }
    }
  
@@ -571,7 +999,7 @@ index a5a8c142..8a2635fd 100644
    _package_dir = "$root_out_dir/cronet"
  
    # Generate LICENSE file by recursively joining all dependent licenses.
-@@ -226,21 +164,6 @@ if (is_android) {
+@@ -226,21 +291,6 @@ if (is_android) {
      ]
    }
  
@@ -593,7 +1021,7 @@ index a5a8c142..8a2635fd 100644
  
    executable("cronet_sample") {
      testonly = true
-@@ -259,12 +182,4 @@ if (is_android) {
+@@ -259,12 +309,4 @@ if (is_android) {
        public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
      }
    }
