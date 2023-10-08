@@ -1,0 +1,41 @@
+diff --git a/chromium/build/config/compiler/compiler.gni b/chromium/build/config/compiler/compiler.gni
+index 18717014..09d5003d 100644
+--- a/chromium/build/config/compiler/compiler.gni
++++ b/chromium/build/config/compiler/compiler.gni
+@@ -162,7 +162,6 @@ assert(
+     "is_cfi=true is known to conflict with use_relative_vtables_abi=true.\n" +
+         "See https://bugs.chromium.org/p/chromium/issues/detail?id=1375035#c53")
+ 
+-assert(!is_cfi || use_thin_lto, "CFI requires ThinLTO")
+ assert(!enable_profiling || !is_component_build,
+        "Cannot profile component builds (crbug.com/1199271).")
+ 
+diff --git a/chromium/components/cronet/BUILD.gn b/chromium/components/cronet/BUILD.gn
+index 0fb3ff91..da9450ac 100644
+--- a/chromium/components/cronet/BUILD.gn
++++ b/chromium/components/cronet/BUILD.gn
+@@ -60,10 +60,6 @@ source_set("cronet_common") {
+     "//components/prefs:prefs",
+     "//net",
+   ]
+-
+-  if (!disable_histogram_support) {
+-    public_deps = [ "//components/metrics:library_support" ]
+-  }
+ }
+ 
+ source_set("metrics_util") {
+diff --git a/chromium/third_party/brotli/BUILD.gn b/chromium/third_party/brotli/BUILD.gn
+index f02400f4..374db7cb 100644
+--- a/chromium/third_party/brotli/BUILD.gn
++++ b/chromium/third_party/brotli/BUILD.gn
+@@ -11,9 +11,6 @@ import("//build/config/sanitizers/sanitizers.gni")
+ config("brotli_defines") {
+   # By default, brotli depends on undefined behavior, but setting
+   # BROTLI_BUILD_PORTABLE should result in a build which does not.
+-  if (is_ubsan) {
+-    defines = [ "BROTLI_BUILD_PORTABLE" ]
+-  }
+ }
+ 
+ config("includes") {

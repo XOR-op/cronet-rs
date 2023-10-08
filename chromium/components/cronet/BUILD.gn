@@ -60,10 +60,6 @@ source_set("cronet_common") {
     "//components/prefs:prefs",
     "//net",
   ]
-
-  if (!disable_histogram_support) {
-    public_deps = [ "//components/metrics:library_support" ]
-  }
 }
 
 source_set("metrics_util") {
