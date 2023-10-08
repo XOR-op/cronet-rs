@@ -1,0 +1,3189 @@
+diff --git a/chromium/base/BUILD.gn b/chromium/base/BUILD.gn
+index cb35c35f2..c999fa75f 100644
+--- a/chromium/base/BUILD.gn
++++ b/chromium/base/BUILD.gn
+@@ -1110,7 +1110,7 @@ component("base") {
+   # Needed for <atomic> if using newer C++ library than sysroot, except if
+   # building inside the cros_sdk environment - use host_toolchain as a
+   # more robust check for this.
+-  if (!use_sysroot && (is_android || is_chromeos || (is_linux && !is_castos)) &&
++  if (!use_sysroot && (is_chromeos || (is_linux && !is_castos)) &&
+       host_toolchain != "//build/toolchain/cros:host") {
+     libs += [ "atomic" ]
+   }
+@@ -1138,63 +1138,18 @@ component("base") {
+   # Android.
+   if (is_android) {
+     sources += [
+-      "android/android_hardware_buffer_compat.cc",
+       "android/android_hardware_buffer_compat.h",
+-      "android/android_image_reader_abi.h",
+-      "android/android_image_reader_compat.cc",
+-      "android/android_image_reader_compat.h",
+-      "android/apk_assets.cc",
+-      "android/apk_assets.h",
+-      "android/application_status_listener.cc",
+       "android/application_status_listener.h",
+-      "android/base_feature_map.cc",
+-      "android/base_features.cc",
+-      "android/base_features.h",
+-      "android/build_info.cc",
++      "android/application_status_listener_stub.cc",
+       "android/build_info.h",
+-      "android/bundle_utils.cc",
+-      "android/bundle_utils.h",
+-      "android/child_process_binding_types.h",
+-      "android/child_process_service.cc",
+-      "android/content_uri_utils.cc",
++      "android/build_info_stub.cc",
+       "android/content_uri_utils.h",
+-      "android/cpu_features.cc",
+-      "android/early_trace_event_binding.cc",
+-      "android/early_trace_event_binding.h",
+-      "android/event_log.cc",
+-      "android/event_log.h",
+-      "android/feature_list_jni.cc",
+-      "android/feature_map.cc",
+-      "android/feature_map.h",
+-      "android/features_jni.cc",
+-      "android/field_trial_list.cc",
+-      "android/important_file_writer_android.cc",
+-      "android/int_string_callback.cc",
+-      "android/int_string_callback.h",
+-      "android/jank_metric_uma_recorder.cc",
+-      "android/jank_metric_uma_recorder.h",
+-      "android/java_handler_thread.cc",
+-      "android/java_handler_thread.h",
+-      "android/java_heap_dump_generator.cc",
+-      "android/java_heap_dump_generator.h",
+-      "android/java_runtime.cc",
+-      "android/java_runtime.h",
+-      "android/library_loader/anchor_functions.cc",
++      "android/content_uri_utils_stub.cc",
++      "android/jni_android.h",
++      "android/jni_android_stub.cc",
+       "android/library_loader/anchor_functions.h",
+-      "android/library_loader/library_prefetcher.cc",
+-      "android/library_loader/library_prefetcher.h",
+-      "android/library_loader/library_prefetcher_hooks.cc",
+-      "android/locale_utils.cc",
+-      "android/locale_utils.h",
+-      "android/meminfo_dump_provider.cc",
+-      "android/meminfo_dump_provider.h",
+-      "android/memory_pressure_listener_android.cc",
+-      "android/memory_pressure_listener_android.h",
+-      "android/path_service_android.cc",
+-      "android/path_utils.cc",
++      "android/library_loader/library_loader_hooks.h",
+       "android/path_utils.h",
+-      "android/radio_utils.cc",
+-      "android/radio_utils.h",
+       "android/reached_addresses_bitset.cc",
+       "android/reached_addresses_bitset.h",
+       "android/reached_code_profiler.cc",
+@@ -1203,20 +1158,9 @@ component("base") {
+       "android/scoped_hardware_buffer_fence_sync.h",
+       "android/scoped_hardware_buffer_handle.cc",
+       "android/scoped_hardware_buffer_handle.h",
+-      "android/statistics_recorder_android.cc",
+-      "android/sys_utils.cc",
++      "android/scoped_java_ref.cc",
++      "android/scoped_java_ref.h",
+       "android/sys_utils.h",
+-      "android/task_scheduler/post_task_android.cc",
+-      "android/task_scheduler/post_task_android.h",
+-      "android/task_scheduler/task_runner_android.cc",
+-      "android/task_scheduler/task_runner_android.h",
+-      "android/task_scheduler/task_traits_android.h",
+-      "android/thread_instruction_count.cc",
+-      "android/thread_instruction_count.h",
+-      "android/timezone_utils.cc",
+-      "android/timezone_utils.h",
+-      "android/unguessable_token_android.cc",
+-      "android/unguessable_token_android.h",
+       "debug/stack_trace_android.cc",
+       "files/file_util_android.cc",
+       "files/scoped_file_android.cc",
+@@ -1231,14 +1175,13 @@ component("base") {
+       "profiler/native_unwinder_android_memory_regions_map.h",
+       "profiler/stack_sampler_android.cc",
+       "system/sys_info_android.cc",
+-      "threading/platform_thread_android.cc",
++      "threading/platform_thread_android_stub.cc",
+ 
+       # Android uses some Linux sources.
+       "debug/elf_reader.cc",
+       "debug/elf_reader.h",
+       "debug/proc_maps_linux.cc",
+       "debug/proc_maps_linux.h",
+-      "power_monitor/power_monitor_device_source_android.cc",
+       "process/internal_linux.cc",
+       "process/internal_linux.h",
+       "process/memory_linux.cc",
+@@ -1308,7 +1251,7 @@ component("base") {
+     # Make jni.h available.
+     configs += [ "//third_party/jdk" ]
+   }
+-  if (is_android || is_robolectric) {
++  if (is_robolectric) {
+     sources += [
+       "android/base_jni_onload.cc",
+       "android/base_jni_onload.h",
+@@ -2254,7 +2197,7 @@ component("base") {
+ 
+     # TODO(b/167763382) Find an alternate solution for Chromecast devices, since
+     # adding the icui18n and icuuc deps significantly increases the binary size.
+-    if (!is_castos && !is_cast_android) {
++    if (false) {
+       sources += [ "time/time_exploded_icu.cc" ]
+ 
+       # The ICU dependency is only needed on systems with a 32-bit time_t.
+diff --git a/chromium/base/allocator/partition_allocator/page_allocator_internals_posix.h b/chromium/base/allocator/partition_allocator/page_allocator_internals_posix.h
+index 425f3efea..d54019398 100644
+--- a/chromium/base/allocator/partition_allocator/page_allocator_internals_posix.h
++++ b/chromium/base/allocator/partition_allocator/page_allocator_internals_posix.h
+@@ -417,7 +417,12 @@ void DiscardSystemPagesInternal(uintptr_t address, size_t length) {
+   // performance benefits unclear.
+   //
+   // Therefore, we just do the simple thing: MADV_DONTNEED.
+-  PA_PCHECK(0 == madvise(ptr, length, MADV_DONTNEED));
++  int ret = madvise(ptr, length, MADV_DONTNEED);
++  if (ret && errno == ENOSYS) {
++    // Ignores when the kernel is built without CONFIG_ADVISE_SYSCALLS
++    return;
++  }
++  PA_PCHECK(ret == 0);
+ #endif  // BUILDFLAG(IS_APPLE)
+ }
+ 
+diff --git a/chromium/base/allocator/partition_allocator/partition_alloc.gni b/chromium/base/allocator/partition_allocator/partition_alloc.gni
+index dbbde0102..96deb5aca 100644
+--- a/chromium/base/allocator/partition_allocator/partition_alloc.gni
++++ b/chromium/base/allocator/partition_allocator/partition_alloc.gni
+@@ -16,9 +16,10 @@ if (is_nacl) {
+   # NaCl targets don't use 64-bit pointers.
+   has_64_bit_pointers = false
+ } else if (current_cpu == "x64" || current_cpu == "arm64" ||
+-           current_cpu == "loong64" || current_cpu == "riscv64") {
++           current_cpu == "loong64" || current_cpu == "riscv64" ||
++           current_cpu == "mips64el") {
+   has_64_bit_pointers = true
+-} else if (current_cpu == "x86" || current_cpu == "arm") {
++} else if (current_cpu == "x86" || current_cpu == "arm" || current_cpu == "mipsel") {
+   has_64_bit_pointers = false
+ } else {
+   assert(false, "Unknown CPU: $current_cpu")
+diff --git a/chromium/base/allocator/partition_allocator/partition_alloc_config.h b/chromium/base/allocator/partition_allocator/partition_alloc_config.h
+index 7d96ec7af..d729b3eb7 100644
+--- a/chromium/base/allocator/partition_allocator/partition_alloc_config.h
++++ b/chromium/base/allocator/partition_allocator/partition_alloc_config.h
+@@ -152,9 +152,10 @@ static_assert(sizeof(void*) != 8, "");
+   (!BUILDFLAG(PUT_REF_COUNT_IN_PREVIOUS_SLOT) && \
+    defined(ARCH_CPU_LITTLE_ENDIAN))
+ 
+-#define PA_CONFIG_HAS_MEMORY_TAGGING()              \
+-  (defined(ARCH_CPU_ARM64) && defined(__clang__) && \
+-   (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)))
++#define PA_CONFIG_HAS_MEMORY_TAGGING()                \
++  (defined(ARCH_CPU_ARM64) && defined(__clang__) &&   \
++   (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID))) && \
++      defined(LIBC_GLIBC)
+ 
+ #if PA_CONFIG(HAS_MEMORY_TAGGING)
+ static_assert(sizeof(void*) == 8);
+diff --git a/chromium/base/allocator/partition_allocator/partition_root.cc b/chromium/base/allocator/partition_allocator/partition_root.cc
+index dd78098be..10da71793 100644
+--- a/chromium/base/allocator/partition_allocator/partition_root.cc
++++ b/chromium/base/allocator/partition_allocator/partition_root.cc
+@@ -280,7 +280,12 @@ void PartitionAllocMallocInitOnce() {
+     return;
+   }
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if defined(__MUSL__)
++  // Musl calls malloc() in pthread_atfork(), resulting in a deadlock.
++  static_cast<void>(BeforeForkInParent);
++  static_cast<void>(AfterForkInParent);
++  static_cast<void>(AfterForkInChild);
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+   // When fork() is called, only the current thread continues to execute in the
+   // child process. If the lock is held, but *not* by this thread when fork() is
+   // called, we have a deadlock.
+diff --git a/chromium/base/allocator/partition_allocator/shim/allocator_shim_default_dispatch_to_partition_alloc.cc b/chromium/base/allocator/partition_allocator/shim/allocator_shim_default_dispatch_to_partition_alloc.cc
+index ee20931d4..8efc8914b 100644
+--- a/chromium/base/allocator/partition_allocator/shim/allocator_shim_default_dispatch_to_partition_alloc.cc
++++ b/chromium/base/allocator/partition_allocator/shim/allocator_shim_default_dispatch_to_partition_alloc.cc
+@@ -778,7 +778,7 @@ SHIM_ALWAYS_EXPORT int mallopt(int cmd, int value) __THROW {
+ 
+ #endif  // !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) && !defined(__MUSL__) || BUILDFLAG(IS_CHROMEOS)
+ SHIM_ALWAYS_EXPORT struct mallinfo mallinfo(void) __THROW {
+   partition_alloc::SimplePartitionStatsDumper allocator_dumper;
+   Allocator()->DumpStats("malloc", true, &allocator_dumper);
+diff --git a/chromium/base/allocator/partition_allocator/shim/allocator_shim_internals.h b/chromium/base/allocator/partition_allocator/shim/allocator_shim_internals.h
+index 8bddea78c..d35e7a980 100644
+--- a/chromium/base/allocator/partition_allocator/shim/allocator_shim_internals.h
++++ b/chromium/base/allocator/partition_allocator/shim/allocator_shim_internals.h
+@@ -9,7 +9,8 @@
+ 
+ #if defined(__GNUC__)
+ 
+-#if BUILDFLAG(IS_POSIX)
++// Musl does not provide sys/cdefs.h
++#if BUILDFLAG(IS_POSIX) && !defined(__MUSL__)
+ #include <sys/cdefs.h>  // for __THROW
+ #endif
+ 
+diff --git a/chromium/base/allocator/partition_allocator/shim/allocator_shim_override_libc_symbols.h b/chromium/base/allocator/partition_allocator/shim/allocator_shim_override_libc_symbols.h
+index bb0717001..49c305a9a 100644
+--- a/chromium/base/allocator/partition_allocator/shim/allocator_shim_override_libc_symbols.h
++++ b/chromium/base/allocator/partition_allocator/shim/allocator_shim_override_libc_symbols.h
+@@ -22,6 +22,12 @@
+ 
+ #include "base/allocator/partition_allocator/shim/allocator_shim_internals.h"
+ 
++// Musl does not specify anything for malloc() etc.
++#if defined(__MUSL__)
++#undef __THROW
++#define __THROW
++#endif
++
+ extern "C" {
+ 
+ // WARNING: Whenever a new function is added there (which, surprisingly enough,
+diff --git a/chromium/base/allocator/partition_allocator/yield_processor.h b/chromium/base/allocator/partition_allocator/yield_processor.h
+index ff15107ae..48548140e 100644
+--- a/chromium/base/allocator/partition_allocator/yield_processor.h
++++ b/chromium/base/allocator/partition_allocator/yield_processor.h
+@@ -31,7 +31,7 @@
+ // architectures (first added in MIPS32r2). To avoid assembler errors when
+ // targeting pre-r2, we must encode the instruction manually.
+ #define PA_YIELD_PROCESSOR __asm__ __volatile__(".word 0x00000140")
+-#elif defined(ARCH_CPU_MIPS64EL) && __mips_isa_rev >= 2
++#elif defined(ARCH_CPU_MIPS_FAMILY) && __mips_isa_rev >= 2
+ // Don't bother doing using .word here since r2 is the lowest supported mips64
+ // that Chromium supports.
+ #define PA_YIELD_PROCESSOR __asm__ __volatile__("pause")
+diff --git a/chromium/base/android/application_status_listener_stub.cc b/chromium/base/android/application_status_listener_stub.cc
+new file mode 100644
+index 000000000..c57e73053
+--- /dev/null
++++ b/chromium/base/android/application_status_listener_stub.cc
+@@ -0,0 +1,35 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "base/android/application_status_listener.h"
++
++namespace base {
++namespace android {
++
++ApplicationStatusListener::ApplicationStatusListener() = default;
++ApplicationStatusListener::~ApplicationStatusListener() = default;
++
++// static
++std::unique_ptr<ApplicationStatusListener> ApplicationStatusListener::New(
++    const ApplicationStateChangeCallback& callback) {
++  return nullptr;
++}
++
++// static
++void ApplicationStatusListener::NotifyApplicationStateChange(
++    ApplicationState state) {
++}
++
++// static
++ApplicationState ApplicationStatusListener::GetState() {
++  return {};
++}
++
++// static
++bool ApplicationStatusListener::HasVisibleActivities() {
++  return false;
++}
++
++}  // namespace android
++}  // namespace base
+diff --git a/chromium/base/android/build_info_stub.cc b/chromium/base/android/build_info_stub.cc
+new file mode 100644
+index 000000000..b45617580
+--- /dev/null
++++ b/chromium/base/android/build_info_stub.cc
+@@ -0,0 +1,74 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <cstdlib>
++
++#include "base/android/build_info.h"
++#include "base/notreached.h"
++
++int __system_property_get(const char* name, char* value);
++
++namespace {
++int GetSdkInt() {
++  constexpr int kPropNameMax = 32;
++  char prop_info[kPropNameMax];
++  __system_property_get("ro.build.version.sdk", prop_info);
++  return std::atoi(prop_info);
++}
++}  // namespace
++
++namespace base {
++namespace android {
++
++struct BuildInfoSingletonTraits {
++  static BuildInfo* New() { return new BuildInfo({}); }
++
++  static void Delete(BuildInfo* x) {
++    // We're leaking this type, see kRegisterAtExit.
++    NOTREACHED();
++  }
++
++  static const bool kRegisterAtExit = false;
++};
++
++BuildInfo::BuildInfo(const std::vector<std::string>& params)
++    : brand_(""),
++      device_(""),
++      android_build_id_(""),
++      manufacturer_(""),
++      model_(""),
++      sdk_int_(GetSdkInt()),
++      build_type_(""),
++      board_(""),
++      host_package_name_(""),
++      host_version_code_(""),
++      host_package_label_(""),
++      package_name_(""),
++      package_version_code_(""),
++      package_version_name_(""),
++      android_build_fp_(""),
++      gms_version_code_(""),
++      installer_package_name_(""),
++      abi_name_(""),
++      custom_themes_(""),
++      resources_version_(""),
++      target_sdk_version_(0),
++      is_debug_android_(false),
++      is_tv_(false),
++      version_incremental_(""),
++      hardware_(""),
++      is_at_least_t_(false),
++      is_automotive_(false),
++      is_at_least_u_(false),
++      targets_at_least_u_(false),
++      codename_(""),
++      vulkan_deqp_level_(0) {}
++
++// static
++BuildInfo* BuildInfo::GetInstance() {
++  return Singleton<BuildInfo, BuildInfoSingletonTraits>::get();
++}
++
++}  // namespace android
++}  // namespace base
+diff --git a/chromium/base/android/content_uri_utils_stub.cc b/chromium/base/android/content_uri_utils_stub.cc
+new file mode 100644
+index 000000000..64f23649a
+--- /dev/null
++++ b/chromium/base/android/content_uri_utils_stub.cc
+@@ -0,0 +1,34 @@
++// Copyright 2013 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "base/android/content_uri_utils.h"
++
++namespace base {
++
++bool ContentUriExists(const FilePath& content_uri) {
++  return false;
++}
++
++File OpenContentUriForRead(const FilePath& content_uri) {
++  return {};
++}
++
++std::string GetContentUriMimeType(const FilePath& content_uri) {
++  return {};
++}
++
++bool MaybeGetFileDisplayName(const FilePath& content_uri,
++                             std::u16string* file_display_name) {
++  return false;
++}
++
++bool DeleteContentUri(const FilePath& content_uri) {
++  return false;
++}
++
++FilePath GetContentUriFromFilePath(const FilePath& file_path) {
++  return {};
++}
++
++}  // namespace base
+diff --git a/chromium/base/android/jni_android_stub.cc b/chromium/base/android/jni_android_stub.cc
+new file mode 100644
+index 000000000..c6e76f5a2
+--- /dev/null
++++ b/chromium/base/android/jni_android_stub.cc
+@@ -0,0 +1,135 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "base/android/jni_android.h"
++
++#include "base/debug/debugging_buildflags.h"
++#include "base/lazy_instance.h"
++#include "base/threading/thread_local.h"
++#include "third_party/abseil-cpp/absl/base/attributes.h"
++
++namespace base {
++namespace android {
++namespace {
++#if BUILDFLAG(CAN_UNWIND_WITH_FRAME_POINTERS)
++ABSL_CONST_INIT thread_local void* stack_frame_pointer = nullptr;
++#endif
++}  // namespace
++
++JNIEnv* AttachCurrentThread() {
++  return nullptr;
++}
++
++JNIEnv* AttachCurrentThreadWithName(const std::string& thread_name) {
++  return nullptr;
++}
++
++void DetachFromVM() {
++}
++
++void InitVM(JavaVM* vm) {
++}
++
++bool IsVMInitialized() {
++  return false;
++}
++
++void InitReplacementClassLoader(JNIEnv* env,
++                                const JavaRef<jobject>& class_loader) {
++}
++
++ScopedJavaLocalRef<jclass> GetClass(JNIEnv* env,
++                                    const char* class_name,
++                                    const std::string& split_name) {
++  return nullptr;
++}
++
++ScopedJavaLocalRef<jclass> GetClass(JNIEnv* env, const char* class_name) {
++  return nullptr;
++}
++
++// This is duplicated with LazyGetClass below because these are performance
++// sensitive.
++jclass LazyGetClass(JNIEnv* env,
++                    const char* class_name,
++                    const std::string& split_name,
++                    std::atomic<jclass>* atomic_class_id) {
++  return nullptr;
++}
++
++// This is duplicated with LazyGetClass above because these are performance
++// sensitive.
++jclass LazyGetClass(JNIEnv* env,
++                    const char* class_name,
++                    std::atomic<jclass>* atomic_class_id) {
++  return nullptr;
++}
++
++template<MethodID::Type type>
++jmethodID MethodID::Get(JNIEnv* env,
++                        jclass clazz,
++                        const char* method_name,
++                        const char* jni_signature) {
++  return nullptr;
++}
++
++// If |atomic_method_id| set, it'll return immediately. Otherwise, it'll call
++// into ::Get() above. If there's a race, it's ok since the values are the same
++// (and the duplicated effort will happen only once).
++template<MethodID::Type type>
++jmethodID MethodID::LazyGet(JNIEnv* env,
++                            jclass clazz,
++                            const char* method_name,
++                            const char* jni_signature,
++                            std::atomic<jmethodID>* atomic_method_id) {
++  return nullptr;
++}
++
++// Various template instantiations.
++template jmethodID MethodID::Get<MethodID::TYPE_STATIC>(
++    JNIEnv* env, jclass clazz, const char* method_name,
++    const char* jni_signature);
++
++template jmethodID MethodID::Get<MethodID::TYPE_INSTANCE>(
++    JNIEnv* env, jclass clazz, const char* method_name,
++    const char* jni_signature);
++
++template jmethodID MethodID::LazyGet<MethodID::TYPE_STATIC>(
++    JNIEnv* env, jclass clazz, const char* method_name,
++    const char* jni_signature, std::atomic<jmethodID>* atomic_method_id);
++
++template jmethodID MethodID::LazyGet<MethodID::TYPE_INSTANCE>(
++    JNIEnv* env, jclass clazz, const char* method_name,
++    const char* jni_signature, std::atomic<jmethodID>* atomic_method_id);
++
++bool HasException(JNIEnv* env) {
++  return false;
++}
++
++bool ClearException(JNIEnv* env) {
++  return true;
++}
++
++void CheckException(JNIEnv* env) {
++}
++
++std::string GetJavaExceptionInfo(JNIEnv* env, jthrowable java_throwable) {
++  return {};
++}
++
++#if BUILDFLAG(CAN_UNWIND_WITH_FRAME_POINTERS)
++
++JNIStackFrameSaver::JNIStackFrameSaver(void* current_fp)
++    : resetter_(&stack_frame_pointer, current_fp) {}
++
++JNIStackFrameSaver::~JNIStackFrameSaver() = default;
++
++void* JNIStackFrameSaver::SavedFrame() {
++  return stack_frame_pointer;
++}
++
++#endif  // BUILDFLAG(CAN_UNWIND_WITH_FRAME_POINTERS)
++
++}  // namespace android
++}  // namespace base
+diff --git a/chromium/base/debug/stack_trace.h b/chromium/base/debug/stack_trace.h
+index ef208def8..b5ef5b4f2 100644
+--- a/chromium/base/debug/stack_trace.h
++++ b/chromium/base/debug/stack_trace.h
+@@ -120,6 +120,9 @@ class BASE_EXPORT StackTrace {
+   // prefix string prepended to each line.
+   void OutputToStreamWithPrefix(std::ostream* os,
+                                 const char* prefix_string) const;
++#else
++  void OutputToStream(std::ostream* os) const;
++  void OutputToStreamWithPrefix(std::ostream*, const char*) const {}
+ #endif
+ 
+   // Resolves backtrace to symbols and returns as string.
+diff --git a/chromium/base/files/file_path.cc b/chromium/base/files/file_path.cc
+index 71ca2666b..5b6e0f9f8 100644
+--- a/chromium/base/files/file_path.cc
++++ b/chromium/base/files/file_path.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "base/files/file_path.h"
+ 
++#include <iostream>
+ #include <string.h>
+ 
+ #include <algorithm>
+diff --git a/chromium/base/files/file_util_android.cc b/chromium/base/files/file_util_android.cc
+index fa09a5782..d2ba68420 100644
+--- a/chromium/base/files/file_util_android.cc
++++ b/chromium/base/files/file_util_android.cc
+@@ -4,30 +4,10 @@
+ 
+ #include "base/files/file_util.h"
+ 
+-#include "base/android/jni_android.h"
+-#include "base/android/jni_string.h"
+-#include "base/base_jni/FileUtils_jni.h"
+ #include "base/files/file_path.h"
+ #include "base/path_service.h"
+ 
+-using base::android::JavaParamRef;
+-using base::android::JavaRef;
+-using base::android::ScopedJavaLocalRef;
+-
+ namespace base {
+-namespace android {
+-
+-static ScopedJavaLocalRef<jstring> JNI_FileUtils_GetAbsoluteFilePath(
+-    JNIEnv* env,
+-    const JavaParamRef<jstring>& j_file_path) {
+-  base::FilePath file_path(
+-      base::android::ConvertJavaStringToUTF8(env, j_file_path));
+-  base::FilePath absolute_file_path = MakeAbsoluteFilePath(file_path);
+-  return base::android::ConvertUTF8ToJavaString(env,
+-                                                absolute_file_path.value());
+-}
+-
+-}  // namespace android
+ 
+ bool GetShmemTempDir(bool executable, base::FilePath* path) {
+   return PathService::Get(base::DIR_CACHE, path);
+diff --git a/chromium/base/process/memory_linux.cc b/chromium/base/process/memory_linux.cc
+index a615585c0..35d8d469b 100644
+--- a/chromium/base/process/memory_linux.cc
++++ b/chromium/base/process/memory_linux.cc
+@@ -18,6 +18,13 @@
+ #include "base/threading/thread_restrictions.h"
+ #include "build/build_config.h"
+ 
++#if !BUILDFLAG(USE_ALLOCATOR_SHIM) && defined(LIBC_GLIBC)
++extern "C" {
++void* __libc_malloc(size_t size);
++void __libc_free(void* ptr);
++}  // extern "C"
++#endif
++
+ namespace base {
+ 
+ namespace {
+diff --git a/chromium/base/process/process_metrics_posix.cc b/chromium/base/process/process_metrics_posix.cc
+index 9a25ea708..24ca40a3a 100644
+--- a/chromium/base/process/process_metrics_posix.cc
++++ b/chromium/base/process/process_metrics_posix.cc
+@@ -110,6 +110,9 @@ void IncreaseFdLimitTo(unsigned int max_descriptors) {
+ namespace {
+ 
+ size_t GetMallocUsageMallinfo() {
++#if defined(__MUSL__)
++  return 0;
++#else
+ #if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+ #if __GLIBC_PREREQ(2, 33)
+ #define MALLINFO2_FOUND_IN_LIBC
+@@ -121,6 +124,7 @@ size_t GetMallocUsageMallinfo() {
+ #endif
+ #undef MALLINFO2_FOUND_IN_LIBC
+   return checked_cast<size_t>(minfo.hblkhd + minfo.arena);
++#endif
+ }
+ 
+ }  // namespace
+diff --git a/chromium/base/threading/platform_thread_android_stub.cc b/chromium/base/threading/platform_thread_android_stub.cc
+new file mode 100644
+index 000000000..f1684025e
+--- /dev/null
++++ b/chromium/base/threading/platform_thread_android_stub.cc
+@@ -0,0 +1,100 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "base/threading/platform_thread.h"
++
++#include <errno.h>
++#include <stddef.h>
++#include <sys/prctl.h>
++#include <sys/resource.h>
++#include <sys/types.h>
++#include <unistd.h>
++
++#include "base/lazy_instance.h"
++#include "base/logging.h"
++#include "base/threading/platform_thread_internal_posix.h"
++#include "base/threading/thread_id_name_manager.h"
++#include "third_party/abseil-cpp/absl/types/optional.h"
++
++namespace base {
++
++namespace internal {
++
++// - kRealtimeAudio corresponds to Android's PRIORITY_AUDIO = -16 value.
++// - kDisplay corresponds to Android's PRIORITY_DISPLAY = -4 value.
++// - kBackground corresponds to Android's PRIORITY_BACKGROUND = 10 value and can
++// result in heavy throttling and force the thread onto a little core on
++// big.LITTLE devices.
++const ThreadPriorityToNiceValuePairForTest
++    kThreadPriorityToNiceValueMapForTest[5] = {
++        {ThreadPriorityForTest::kRealtimeAudio, -16},
++        {ThreadPriorityForTest::kDisplay, -4},
++        {ThreadPriorityForTest::kNormal, 0},
++        {ThreadPriorityForTest::kUtility, 1},
++        {ThreadPriorityForTest::kBackground, 10},
++};
++
++// - kBackground corresponds to Android's PRIORITY_BACKGROUND = 10 value and can
++// result in heavy throttling and force the thread onto a little core on
++// big.LITTLE devices.
++// - kCompositing and kDisplayCritical corresponds to Android's PRIORITY_DISPLAY
++// = -4 value.
++// - kRealtimeAudio corresponds to Android's PRIORITY_AUDIO = -16 value.
++const ThreadTypeToNiceValuePair kThreadTypeToNiceValueMap[7] = {
++    {ThreadType::kBackground, 10},       {ThreadType::kUtility, 1},
++    {ThreadType::kResourceEfficient, 0}, {ThreadType::kDefault, 0},
++    {ThreadType::kCompositing, -4},      {ThreadType::kDisplayCritical, -4},
++    {ThreadType::kRealtimeAudio, -16},
++};
++
++bool CanSetThreadTypeToRealtimeAudio() {
++  return false;
++}
++
++bool SetCurrentThreadTypeForPlatform(ThreadType thread_type,
++                                     MessagePumpType pump_type_hint) {
++  return false;
++}
++
++absl::optional<ThreadPriorityForTest>
++GetCurrentThreadPriorityForPlatformForTest() {
++  return absl::nullopt;
++}
++
++}  // namespace internal
++
++void PlatformThread::SetName(const std::string& name) {
++  ThreadIdNameManager::GetInstance()->SetName(name);
++
++  // Like linux, on android we can get the thread names to show up in the
++  // debugger by setting the process name for the LWP.
++  // We don't want to do this for the main thread because that would rename
++  // the process, causing tools like killall to stop working.
++  if (PlatformThread::CurrentId() == getpid())
++    return;
++
++  // Set the name for the LWP (which gets truncated to 15 characters).
++  int err = prctl(PR_SET_NAME, name.c_str());
++  if (err < 0 && errno != EPERM)
++    DPLOG(ERROR) << "prctl(PR_SET_NAME)";
++}
++
++
++void InitThreading() {
++}
++
++void TerminateOnThread() {
++}
++
++size_t GetDefaultThreadStackSize(const pthread_attr_t& attributes) {
++#if !defined(ADDRESS_SANITIZER)
++  return 0;
++#else
++  // AddressSanitizer bloats the stack approximately 2x. Default stack size of
++  // 1Mb is not enough for some tests (see http://crbug.com/263749 for example).
++  return 2 * (1 << 20);  // 2Mb
++#endif
++}
++
++}  // namespace base
+diff --git a/chromium/base/time/time.h b/chromium/base/time/time.h
+index 42d812b3a..403a5f63e 100644
+--- a/chromium/base/time/time.h
++++ b/chromium/base/time/time.h
+@@ -835,6 +835,7 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
+ 
+   // Some platforms use the ICU library to provide To/FromExploded, when their
+   // native library implementations are insufficient in some way.
++#if 0
+   static void ExplodeUsingIcu(int64_t millis_since_unix_epoch,
+                               bool is_local,
+                               Exploded* exploded);
+@@ -842,6 +843,7 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
+       bool is_local,
+       const Exploded& exploded,
+       int64_t* millis_since_unix_epoch);
++#endif
+ 
+   // Rounds down the time to the nearest day in either local time
+   // |is_local = true| or UTC |is_local = false|.
+diff --git a/chromium/base/time/time_exploded_posix.cc b/chromium/base/time/time_exploded_posix.cc
+index 8cc737611..5f9ff3c8f 100644
+--- a/chromium/base/time/time_exploded_posix.cc
++++ b/chromium/base/time/time_exploded_posix.cc
+@@ -128,7 +128,7 @@ void Time::Explode(bool is_local, Exploded* exploded) const {
+   if (sizeof(SysTime) < 8) {
+ // TODO(b/167763382) Find an alternate solution for Chromecast devices, since
+ // adding the icui18n dep significantly increases the binary size.
+-#if !BUILDFLAG(IS_CASTOS) && !BUILDFLAG(IS_CAST_ANDROID)
++#if 0
+     ExplodeUsingIcu(millis_since_unix_epoch, is_local, exploded);
+     return;
+ #endif  // !BUILDFLAG(IS_CASTOS) && !BUILDFLAG(IS_CAST_ANDROID)
+diff --git a/chromium/base/trace_event/base_tracing_forward.h b/chromium/base/trace_event/base_tracing_forward.h
+index 825feaadf..7b29f4dfb 100644
+--- a/chromium/base/trace_event/base_tracing_forward.h
++++ b/chromium/base/trace_event/base_tracing_forward.h
+@@ -10,7 +10,7 @@
+ 
+ #include "base/tracing_buildflags.h"
+ 
+-#if BUILDFLAG(ENABLE_BASE_TRACING)
++#if 1
+ #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"  // nogncheck
+ #else
+ 
+diff --git a/chromium/base/trace_event/malloc_dump_provider.cc b/chromium/base/trace_event/malloc_dump_provider.cc
+index 6a8088b94..140381546 100644
+--- a/chromium/base/trace_event/malloc_dump_provider.cc
++++ b/chromium/base/trace_event/malloc_dump_provider.cc
+@@ -359,6 +359,7 @@ bool MallocDumpProvider::OnMemoryDump(const MemoryDumpArgs& args,
+                      &allocated_objects_count);
+ #elif BUILDFLAG(IS_FUCHSIA)
+ // TODO(fuchsia): Port, see https://crbug.com/706592.
++#elif defined(__MUSL__)
+ #else
+   ReportMallinfoStats(/*pmd=*/nullptr, &total_virtual_size, &resident_size,
+                       &allocated_objects_size, &allocated_objects_count);
+diff --git a/chromium/base/trace_event/memory_allocator_dump.h b/chromium/base/trace_event/memory_allocator_dump.h
+index 368804875..f3154f1ab 100644
+--- a/chromium/base/trace_event/memory_allocator_dump.h
++++ b/chromium/base/trace_event/memory_allocator_dump.h
+@@ -5,6 +5,8 @@
+ #ifndef BASE_TRACE_EVENT_MEMORY_ALLOCATOR_DUMP_H_
+ #define BASE_TRACE_EVENT_MEMORY_ALLOCATOR_DUMP_H_
+ 
++#include "base/trace_event/trace_event_stub.h"
++#if 0
+ #include <stdint.h>
+ 
+ #include <iosfwd>
+@@ -159,4 +161,5 @@ void BASE_EXPORT PrintTo(const MemoryAllocatorDump::Entry&, std::ostream*);
+ }  // namespace trace_event
+ }  // namespace base
+ 
++#endif
+ #endif  // BASE_TRACE_EVENT_MEMORY_ALLOCATOR_DUMP_H_
+diff --git a/chromium/base/trace_event/memory_dump_manager.h b/chromium/base/trace_event/memory_dump_manager.h
+index ef12d9df7..4cdc51528 100644
+--- a/chromium/base/trace_event/memory_dump_manager.h
++++ b/chromium/base/trace_event/memory_dump_manager.h
+@@ -5,6 +5,8 @@
+ #ifndef BASE_TRACE_EVENT_MEMORY_DUMP_MANAGER_H_
+ #define BASE_TRACE_EVENT_MEMORY_DUMP_MANAGER_H_
+ 
++#include "base/trace_event/trace_event_stub.h"
++#if 0
+ #include <stdint.h>
+ 
+ #include <map>
+@@ -277,4 +279,5 @@ class BASE_EXPORT MemoryDumpManager {
+ }  // namespace trace_event
+ }  // namespace base
+ 
++#endif
+ #endif  // BASE_TRACE_EVENT_MEMORY_DUMP_MANAGER_H_
+diff --git a/chromium/base/trace_event/memory_dump_provider.h b/chromium/base/trace_event/memory_dump_provider.h
+index 52b54e6c9..af4f7de89 100644
+--- a/chromium/base/trace_event/memory_dump_provider.h
++++ b/chromium/base/trace_event/memory_dump_provider.h
+@@ -5,6 +5,8 @@
+ #ifndef BASE_TRACE_EVENT_MEMORY_DUMP_PROVIDER_H_
+ #define BASE_TRACE_EVENT_MEMORY_DUMP_PROVIDER_H_
+ 
++#include "base/trace_event/trace_event_stub.h"
++#if 0
+ #include "base/base_export.h"
+ #include "base/process/process_handle.h"
+ #include "base/trace_event/memory_dump_request_args.h"
+@@ -48,4 +50,5 @@ class BASE_EXPORT MemoryDumpProvider {
+ }  // namespace trace_event
+ }  // namespace base
+ 
++#endif
+ #endif  // BASE_TRACE_EVENT_MEMORY_DUMP_PROVIDER_H_
+diff --git a/chromium/base/trace_event/process_memory_dump.h b/chromium/base/trace_event/process_memory_dump.h
+index 059fc2533..b4bff9935 100644
+--- a/chromium/base/trace_event/process_memory_dump.h
++++ b/chromium/base/trace_event/process_memory_dump.h
+@@ -5,6 +5,8 @@
+ #ifndef BASE_TRACE_EVENT_PROCESS_MEMORY_DUMP_H_
+ #define BASE_TRACE_EVENT_PROCESS_MEMORY_DUMP_H_
+ 
++#include "base/trace_event/trace_event_stub.h"
++#if 0
+ #include <stddef.h>
+ 
+ #include <map>
+@@ -295,4 +297,5 @@ class BASE_EXPORT ProcessMemoryDump {
+ }  // namespace trace_event
+ }  // namespace base
+ 
++#endif
+ #endif  // BASE_TRACE_EVENT_PROCESS_MEMORY_DUMP_H_
+diff --git a/chromium/base/trace_event/trace_event.h b/chromium/base/trace_event/trace_event.h
+index 691f78e10..4a2503668 100644
+--- a/chromium/base/trace_event/trace_event.h
++++ b/chromium/base/trace_event/trace_event.h
+@@ -5,6 +5,8 @@
+ #ifndef BASE_TRACE_EVENT_TRACE_EVENT_H_
+ #define BASE_TRACE_EVENT_TRACE_EVENT_H_
+ 
++#include "base/trace_event/trace_event_stub.h"
++#if 0
+ // This header file defines implementation details of how the trace macros in
+ // trace_event_common.h collect and store trace events. Anything not
+ // implementation-specific should go in trace_event_common.h instead of here.
+@@ -792,4 +794,5 @@ class TraceScopedTrackableObject {
+ }  // namespace trace_event
+ }  // namespace base
+ 
++#endif
+ #endif  // BASE_TRACE_EVENT_TRACE_EVENT_H_
+diff --git a/chromium/base/trace_event/trace_event_stub.cc b/chromium/base/trace_event/trace_event_stub.cc
+index 8c40ae346..ecadae09c 100644
+--- a/chromium/base/trace_event/trace_event_stub.cc
++++ b/chromium/base/trace_event/trace_event_stub.cc
+@@ -6,6 +6,7 @@
+ 
+ #include <string>
+ 
++#include "base/trace_event/memory_usage_estimator.h"
+ #include "base/trace_event/trace_event_stub.h"
+ 
+ namespace base {
+@@ -20,6 +21,9 @@ MemoryDumpProvider::~MemoryDumpProvider() = default;
+ // static
+ constexpr const char* const MemoryDumpManager::kTraceCategory;
+ 
++template size_t EstimateMemoryUsage(const std::string&);
++template size_t EstimateMemoryUsage(const std::u16string&);
++
+ }  // namespace trace_event
+ }  // namespace base
+ 
+diff --git a/chromium/base/trace_event/trace_event_stub.h b/chromium/base/trace_event/trace_event_stub.h
+index 4ef0a315b..26907a895 100644
+--- a/chromium/base/trace_event/trace_event_stub.h
++++ b/chromium/base/trace_event/trace_event_stub.h
+@@ -12,6 +12,8 @@
+ #include <string>
+ 
+ #include "base/base_export.h"
++#include "base/check.h"
++#include "base/memory/ref_counted.h"
+ #include "base/strings/string_piece.h"
+ #include "base/trace_event/common/trace_event_common.h"
+ #include "base/trace_event/memory_allocator_dump_guid.h"
+@@ -151,6 +153,41 @@ class BASE_EXPORT MemoryDumpProvider {
+   MemoryDumpProvider() = default;
+ };
+ 
++class BASE_EXPORT MemoryAllocatorDump {
++ public:
++  static constexpr char* kNameSize = nullptr;
++  static constexpr char* kNameObjectCount = nullptr;
++  static constexpr char* kUnitsBytes = nullptr;
++  static constexpr char* kUnitsObjects = nullptr;
++  static constexpr char* kTypeScalar = nullptr;
++  static constexpr char* kTypeString = nullptr;
++  void AddScalar(const char* name, const char* units, uint64_t value) {}
++  void AddString(const char* name,
++                 const char* units,
++                 const std::string& value) {}
++  const std::string& absolute_name() const { return absolute_name_; }
++  const MemoryAllocatorDumpGuid& guid() const { return guid_; }
++
++ private:
++  const std::string absolute_name_;
++  MemoryAllocatorDumpGuid guid_;
++};
++
++class BASE_EXPORT ProcessMemoryDump {
++ public:
++  MemoryAllocatorDump* CreateAllocatorDump(const std::string& absolute_name) {
++    CHECK(false);
++    return nullptr;
++  }
++  MemoryAllocatorDump* GetAllocatorDump(
++      const std::string& absolute_name) const {
++    CHECK(false);
++    return nullptr;
++  }
++  void AddOwnershipEdge(const MemoryAllocatorDumpGuid& source,
++                        const MemoryAllocatorDumpGuid& target) {}
++};
++
+ class BASE_EXPORT MemoryDumpManager {
+  public:
+   static constexpr const char* const kTraceCategory =
+@@ -173,19 +210,19 @@ class TracedArray;
+ class TracedDictionary;
+ class EventContext;
+ 
+-class StaticString {
++class BASE_EXPORT StaticString {
+  public:
+   template <typename T>
+   StaticString(T) {}
+ };
+ 
+-class DynamicString {
++class BASE_EXPORT DynamicString {
+  public:
+   template <typename T>
+   explicit DynamicString(T) {}
+ };
+ 
+-class TracedValue {
++class BASE_EXPORT TracedValue {
+  public:
+   void WriteInt64(int64_t) && {}
+   void WriteUInt64(uint64_t) && {}
+@@ -200,7 +237,7 @@ class TracedValue {
+   TracedArray WriteArray() &&;
+ };
+ 
+-class TracedDictionary {
++class BASE_EXPORT TracedDictionary {
+  public:
+   TracedValue AddItem(StaticString) { return TracedValue(); }
+   TracedValue AddItem(DynamicString) { return TracedValue(); }
+@@ -216,7 +253,7 @@ class TracedDictionary {
+   TracedArray AddArray(DynamicString);
+ };
+ 
+-class TracedArray {
++class BASE_EXPORT TracedArray {
+  public:
+   TracedValue AppendItem() { return TracedValue(); }
+ 
+@@ -228,7 +265,7 @@ class TracedArray {
+ };
+ 
+ template <class T>
+-void WriteIntoTracedValue(TracedValue, T&&) {}
++BASE_EXPORT void WriteIntoTracedValue(TracedValue, T&&) {}
+ 
+ struct Track {
+   explicit Track(uint64_t id) {}
+diff --git a/chromium/base/trace_event/typed_macros.h b/chromium/base/trace_event/typed_macros.h
+index 32681189c..20f3c2983 100644
+--- a/chromium/base/trace_event/typed_macros.h
++++ b/chromium/base/trace_event/typed_macros.h
+@@ -11,6 +11,7 @@
+ 
+ // Needed not for this file, but for every user of the TRACE_EVENT macros for
+ // the lambda definition. So included here for convenience.
++#if 0
+ #include "base/tracing/protos/chrome_track_event.pbzero.h"
+ #include "third_party/perfetto/include/perfetto/tracing/event_context.h"
+ #include "third_party/perfetto/include/perfetto/tracing/string_helpers.h"
+@@ -97,4 +98,5 @@
+                                    ##__VA_ARGS__)
+ 
+ #endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
++#endif
+ #endif  // BASE_TRACE_EVENT_TYPED_MACROS_H_
+diff --git a/chromium/build/config/BUILDCONFIG.gn b/chromium/build/config/BUILDCONFIG.gn
+index 105e194dd..a67b094bc 100644
+--- a/chromium/build/config/BUILDCONFIG.gn
++++ b/chromium/build/config/BUILDCONFIG.gn
+@@ -268,6 +268,8 @@ if (target_os == "android") {
+   _default_toolchain = "//build/toolchain/aix:$target_cpu"
+ } else if (target_os == "zos") {
+   _default_toolchain = "//build/toolchain/zos:$target_cpu"
++} else if (target_os == "openwrt") {
++  _default_toolchain = "//build/toolchain/openwrt:$target_cpu"
+ } else {
+   assert(false, "Unsupported target_os: $target_os")
+ }
+@@ -302,7 +304,7 @@ is_android = current_os == "android"
+ is_chromeos = current_os == "chromeos"
+ is_fuchsia = current_os == "fuchsia"
+ is_ios = current_os == "ios"
+-is_linux = current_os == "linux"
++is_linux = current_os == "linux" || current_os == "openwrt"
+ is_mac = current_os == "mac"
+ is_nacl = current_os == "nacl"
+ is_win = current_os == "win" || current_os == "winuwp"
+@@ -348,7 +350,7 @@ default_compiler_configs = [
+   "//build/config/compiler:no_unresolved_symbols",
+   "//build/config/compiler:runtime_library",
+   "//build/config/compiler:thin_archive",
+-  "//build/config/compiler:thinlto_optimize_default",
++  "//build/config/compiler:thinlto_optimize_max",
+   "//build/config/compiler/pgo:default_pgo_flags",
+   "//build/config/coverage:default_coverage",
+   "//build/config/sanitizers:default_sanitizer_flags",
+diff --git a/chromium/build/config/arm.gni b/chromium/build/config/arm.gni
+index cc82ed5ba..e410206dd 100644
+--- a/chromium/build/config/arm.gni
++++ b/chromium/build/config/arm.gni
+@@ -37,6 +37,8 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+     # Thumb is a reduced instruction set available on some ARM processors that
+     # has increased code density.
+     arm_use_thumb = true
++
++    arm_cpu = ""
+   }
+ 
+   # For lacros build, we use ARM v8 by default.
+@@ -128,6 +130,9 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+   # arm64 supports only "hard".
+   arm_float_abi = "hard"
+   arm_use_neon = true
++  declare_args() {
++    arm_cpu = ""
++  }
+   declare_args() {
+     # Enables the new Armv8 branch protection features. Valid strings are:
+     # - "pac": Enables Pointer Authentication Code (PAC, featured in Armv8.3)
+diff --git a/chromium/build/config/compiler/BUILD.gn b/chromium/build/config/compiler/BUILD.gn
+index 46a1fcea6..9850bc8d2 100644
+--- a/chromium/build/config/compiler/BUILD.gn
++++ b/chromium/build/config/compiler/BUILD.gn
+@@ -286,6 +286,9 @@ config("compiler") {
+     configs += [ "//build/config/android:compiler" ]
+   } else if (is_linux || is_chromeos) {
+     configs += [ "//build/config/linux:compiler" ]
++    if (current_os == "openwrt") {
++      configs += [ "//build/config/openwrt:compiler" ]
++    }
+   } else if (is_nacl) {
+     configs += [ "//build/config/nacl:compiler" ]
+   } else if (is_mac) {
+@@ -792,7 +795,11 @@ config("compiler") {
+     # TODO(pcc): The contents of .ARM.attributes should be based on the
+     # -march flag passed at compile time (see llvm.org/pr36291).
+     if (current_cpu == "arm") {
+-      ldflags += [ "-march=$arm_arch" ]
++      if (arm_cpu != "") {
++        ldflags += [ "-mcpu=$arm_cpu" ]
++      } else {
++        ldflags += [ "-march=$arm_arch" ]
++      }
+     }
+   }
+ 
+@@ -1109,28 +1116,38 @@ config("compiler_cpu_abi") {
+       }
+     } else if (current_cpu == "arm") {
+       if (is_clang && !is_android && !is_nacl &&
+-          !(is_chromeos_lacros && is_chromeos_device)) {
++          !(is_chromeos_lacros && is_chromeos_device) &&
++          current_os != "openwrt") {
+         cflags += [ "--target=arm-linux-gnueabihf" ]
+         ldflags += [ "--target=arm-linux-gnueabihf" ]
+       }
+       if (!is_nacl) {
+         cflags += [
+-          "-march=$arm_arch",
+           "-mfloat-abi=$arm_float_abi",
+         ]
++        if (arm_cpu != "") {
++          cflags += [ "-mcpu=$arm_cpu" ]
++        } else {
++          cflags += [ "-march=$arm_arch" ]
++        }
++        ldflags += [ "-mfloat-abi=$arm_float_abi" ]
+       }
+       if (arm_tune != "") {
+         cflags += [ "-mtune=$arm_tune" ]
+       }
+     } else if (current_cpu == "arm64") {
+       if (is_clang && !is_android && !is_nacl && !is_fuchsia &&
+-          !(is_chromeos_lacros && is_chromeos_device)) {
++          !(is_chromeos_lacros && is_chromeos_device) &&
++          current_os != "openwrt") {
+         cflags += [ "--target=aarch64-linux-gnu" ]
+         ldflags += [ "--target=aarch64-linux-gnu" ]
+       }
++      if (arm_cpu != "") {
++        cflags += [ "-mcpu=$arm_cpu" ]
++      }
+     } else if (current_cpu == "mipsel" && !is_nacl) {
+       ldflags += [ "-Wl,--hash-style=sysv" ]
+-      if (custom_toolchain == "") {
++      if (custom_toolchain == "" && current_os != "openwrt") {
+         if (is_clang) {
+           if (is_android) {
+             cflags += [ "--target=mipsel-linux-android" ]
+@@ -1261,7 +1278,7 @@ config("compiler_cpu_abi") {
+     } else if (current_cpu == "mips64el") {
+       cflags += [ "-D__SANE_USERSPACE_TYPES__" ]
+       ldflags += [ "-Wl,--hash-style=sysv" ]
+-      if (custom_toolchain == "") {
++      if (custom_toolchain == "" && current_os != "openwrt") {
+         if (is_clang) {
+           if (is_android) {
+             cflags += [ "--target=mips64el-linux-android" ]
+@@ -1369,7 +1386,7 @@ config("compiler_cpu_abi") {
+         ldflags += [ "-m64" ]
+       }
+     } else if (current_cpu == "riscv64") {
+-      if (is_clang && !is_android) {
++      if (is_clang && !is_android && current_os != "openwrt") {
+         cflags += [ "--target=riscv64-linux-gnu" ]
+         ldflags += [ "--target=riscv64-linux-gnu" ]
+       }
+@@ -1433,7 +1450,7 @@ config("compiler_deterministic") {
+ 
+   # Eliminate build metadata (__DATE__, __TIME__ and __TIMESTAMP__) for
+   # deterministic build.  See https://crbug.com/314403
+-  if (!is_official_build) {
++  if (true) {
+     if (is_win && !is_clang) {
+       cflags += [
+         "/wd4117",  # Trying to define or undefine a predefined macro.
+@@ -1543,7 +1560,7 @@ config("rustc_revision") {
+ }
+ 
+ config("compiler_arm_fpu") {
+-  if (current_cpu == "arm" && !is_ios && !is_nacl) {
++  if (current_cpu == "arm" && !is_ios && !is_nacl && arm_fpu != "") {
+     cflags = [ "-mfpu=$arm_fpu" ]
+     if (!arm_use_thumb) {
+       cflags += [ "-marm" ]
+diff --git a/chromium/build/config/gclient_args.gni b/chromium/build/config/gclient_args.gni
+index 04c01c247..02b2b9872 100644
+--- a/chromium/build/config/gclient_args.gni
++++ b/chromium/build/config/gclient_args.gni
+@@ -1,5 +1,5 @@
+ # Generated from 'DEPS'
+-build_with_chromium = true
++build_with_chromium = false
+ checkout_android = false
+ checkout_android_prebuilts_build_tools = false
+ checkout_android_native_support = false
+diff --git a/chromium/build/config/openwrt/BUILD.gn b/chromium/build/config/openwrt/BUILD.gn
+new file mode 100644
+index 000000000..20d2ee9ff
+--- /dev/null
++++ b/chromium/build/config/openwrt/BUILD.gn
+@@ -0,0 +1,66 @@
++# Copyright 2014 The Chromium Authors. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++import("//build/config/c++/c++.gni")
++import("//build/config/compiler/compiler.gni")
++import("//build/config/sanitizers/sanitizers.gni")
++
++if (current_toolchain == default_toolchain) {
++  import("//build/toolchain/concurrent_links.gni")
++}
++
++assert(current_os == "openwrt")
++
++declare_args() {
++  build_static = false
++}
++
++# This is included by reference in the //build/config/compiler config that
++# is applied to all targets. It is here to separate out the logic that is
++# Android-only.
++config("compiler") {
++  cflags = []
++  ldflags = []
++
++  defines = [
++    "_LIBCPP_HAS_MUSL_LIBC",
++    "__UCLIBC__",
++    "__MUSL__",
++  ]
++
++  if (build_static) {
++    # Musl static objects are not built with -fPIC, cannot use -static-pie.
++    ldflags += [ "-static" ]
++  } else if (current_cpu == "x86") {
++    ldflags += [ "-Wl,--dynamic-linker=/lib/ld-musl-i386.so.1" ]
++  } else if (current_cpu == "mipsel") {
++    ldflags += [ "-Wl,--dynamic-linker=/lib/ld-musl-mipsel-sf.so.1" ]
++  }
++
++  abi = "musl"
++  if (current_cpu == "arm") {
++    abi = "muslgnueabi"
++    arch = "arm"
++  } else if (current_cpu == "arm64") {
++    arch = "aarch64"
++  } else if (current_cpu == "x86") {
++    arch = "i486"
++  } else if (current_cpu == "x64") {
++    arch = "x86_64"
++  } else if (current_cpu == "mipsel") {
++    arch = "mipsel"
++  } else if (current_cpu == "mips64el") {
++    arch = "mips64el"
++  } else if (current_cpu == "riscv64") {
++    arch = "riscv64"
++  } else {
++    assert(false, "Architecture not supported")
++  }
++  cflags += [ "--target=$arch-openwrt-linux-$abi" ]
++  ldflags += [ "--target=$arch-openwrt-linux-$abi" ]
++
++  # Assign any flags set for the C compiler to asmflags so that they are sent
++  # to the assembler.
++  asmflags = cflags
++}
+diff --git a/chromium/build/linux/sysroot_scripts/generate_keyring.sh b/chromium/build/linux/sysroot_scripts/generate_keyring.sh
+index 87cecab5d..6cd9fcfb1 100755
+--- a/chromium/build/linux/sysroot_scripts/generate_keyring.sh
++++ b/chromium/build/linux/sysroot_scripts/generate_keyring.sh
+@@ -9,8 +9,14 @@ set -o errexit
+ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ 
+ KEYS=(
++    # Debian Ports Archive Automatic Signing Key (2023)
++    "B523E5F3FC4E5F2C"
++    # Debian Ports Archive Automatic Signing Key (2024)
++    "8D69674688B6CB36"
+     # Debian Archive Automatic Signing Key (12/bookworm)
+-    "6ED0E7B82643E131"
++    "B7C5D7D6350947F8"
++    # Debian Security Archive Automatic Signing Key (12/bookworm)
++    "254CF3B5AEC0A8F0"
+     # Debian Stable Release Key (12/bookworm)
+     "F8D2585B8783D481"
+     # Debian Archive Automatic Signing Key (11/bullseye)
+diff --git a/chromium/build/linux/sysroot_scripts/install-sysroot.py b/chromium/build/linux/sysroot_scripts/install-sysroot.py
+index a2ac8305d..a6e87f9ef 100755
+--- a/chromium/build/linux/sysroot_scripts/install-sysroot.py
++++ b/chromium/build/linux/sysroot_scripts/install-sysroot.py
+@@ -35,7 +35,7 @@ from urllib.request import urlopen
+ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
+ 
+-VALID_ARCHS = ('amd64', 'i386', 'armhf', 'arm64', 'armel', 'mipsel', 'mips64el')
++VALID_ARCHS = ('amd64', 'i386', 'armhf', 'arm64', 'armel', 'mipsel', 'mips64el', 'riscv64')
+ 
+ ARCH_TRANSLATIONS = {
+     'x64': 'amd64',
+diff --git a/chromium/build/linux/sysroot_scripts/sysroot-creator.sh b/chromium/build/linux/sysroot_scripts/sysroot-creator.sh
+index 71a9ade86..aeb46435b 100755
+--- a/chromium/build/linux/sysroot_scripts/sysroot-creator.sh
++++ b/chromium/build/linux/sysroot_scripts/sysroot-creator.sh
+@@ -32,11 +32,6 @@ ARCHIVE_TIMESTAMP=20230611T210420Z
+ 
+ ARCHIVE_URL="https://snapshot.debian.org/archive/debian/$ARCHIVE_TIMESTAMP/"
+ APT_SOURCES_LIST=(
+-  # Debian 12 (Bookworm) is needed for GTK4.  It should be kept before bullseye
+-  # so that bullseye takes precedence.
+-  "${ARCHIVE_URL} bookworm main"
+-  "${ARCHIVE_URL} bookworm-updates main"
+-
+   # This mimics a sources.list from bullseye.
+   "${ARCHIVE_URL} bullseye main contrib non-free"
+   "${ARCHIVE_URL} bullseye-updates main contrib non-free"
+@@ -48,460 +43,50 @@ KEYRING_FILE="${SCRIPT_DIR}/keyring.gpg"
+ 
+ # Sysroot packages: these are the packages needed to build chrome.
+ DEBIAN_PACKAGES="\
+-  comerr-dev
+-  krb5-multidev
+-  libasound2
+-  libasound2-dev
+-  libasyncns0
+-  libatk-bridge2.0-0
+-  libatk-bridge2.0-dev
+-  libatk1.0-0
+-  libatk1.0-dev
+   libatomic1
+-  libatspi2.0-0
+-  libatspi2.0-dev
+-  libattr1
+-  libaudit1
+-  libavahi-client3
+-  libavahi-common3
+-  libb2-1
+-  libblkid-dev
+-  libblkid1
+-  libbluetooth-dev
+-  libbluetooth3
+-  libbrotli-dev
+-  libbrotli1
+-  libbsd0
+   libc6
+   libc6-dev
+-  libcairo-gobject2
+-  libcairo-script-interpreter2
+-  libcairo2
+-  libcairo2-dev
+-  libcap-dev
+-  libcap-ng0
+-  libcap2
+-  libcloudproviders0
+-  libcolord2
+-  libcom-err2
+-  libcrypt-dev
+   libcrypt1
+-  libcups2
+-  libcups2-dev
+-  libcupsimage2
+-  libcupsimage2-dev
+-  libcurl3-gnutls
+-  libcurl4-gnutls-dev
+-  libdatrie-dev
+-  libdatrie1
+-  libdb5.3
+-  libdbus-1-3
+-  libdbus-1-dev
+-  libdbus-glib-1-2
+-  libdbusmenu-glib-dev
+-  libdbusmenu-glib4
+-  libdbusmenu-gtk3-4
+-  libdbusmenu-gtk4
+-  libdeflate-dev
+-  libdeflate0
+-  libdouble-conversion3
+-  libdrm-amdgpu1
+-  libdrm-dev
+-  libdrm-nouveau2
+-  libdrm-radeon1
+-  libdrm2
+-  libegl-dev
+-  libegl1
+-  libegl1-mesa
+-  libegl1-mesa-dev
+-  libelf-dev
+-  libelf1
+-  libepoxy-dev
+-  libepoxy0
+-  libevdev-dev
+-  libevdev2
+-  libevent-2.1-7
+-  libexpat1
+-  libexpat1-dev
+-  libffi-dev
+-  libffi7
+-  libflac-dev
+-  libflac8
+-  libfontconfig-dev
+-  libfontconfig1
+-  libfreetype-dev
+-  libfreetype6
+-  libfribidi-dev
+-  libfribidi0
+-  libgbm-dev
+-  libgbm1
+   libgcc-10-dev
+   libgcc-s1
+-  libgcrypt20
+-  libgcrypt20-dev
+-  libgdk-pixbuf-2.0-0
+-  libgdk-pixbuf-2.0-dev
+-  libgl-dev
+-  libgl1
+-  libgl1-mesa-dev
+-  libgl1-mesa-glx
+-  libglapi-mesa
+-  libgles-dev
+-  libgles1
+-  libgles2
+-  libglib2.0-0
+-  libglib2.0-dev
+-  libglvnd-dev
+-  libglvnd0
+-  libglx-dev
+-  libglx0
+-  libgmp10
+-  libgnutls-dane0
+-  libgnutls-openssl27
+-  libgnutls28-dev
+-  libgnutls30
+-  libgnutlsxx28
+   libgomp1
+-  libgpg-error-dev
+-  libgpg-error0
+-  libgraphene-1.0-0
+-  libgraphene-1.0-dev
+-  libgraphite2-3
+-  libgraphite2-dev
+-  libgssapi-krb5-2
+-  libgssrpc4
+-  libgtk-3-0
+-  libgtk-3-dev
+-  libgtk-4-1
+-  libgtk-4-dev
+-  libgtk2.0-0
+-  libgudev-1.0-0
+-  libharfbuzz-dev
+-  libharfbuzz-gobject0
+-  libharfbuzz-icu0
+-  libharfbuzz0b
+-  libhogweed6
+-  libice6
+-  libicu-le-hb0
+-  libicu67
+-  libidl-2-0
+-  libidn11
+-  libidn2-0
+-  libinput-dev
+-  libinput10
+-  libjbig-dev
+-  libjbig0
+-  libjpeg62-turbo
+-  libjpeg62-turbo-dev
+-  libjson-glib-1.0-0
+-  libjsoncpp-dev
+-  libjsoncpp24
+-  libk5crypto3
+-  libkadm5clnt-mit12
+-  libkadm5srv-mit12
+-  libkdb5-10
+-  libkeyutils1
+-  libkrb5-3
+-  libkrb5-dev
+-  libkrb5support0
+-  liblcms2-2
+-  libldap-2.4-2
+-  liblerc4
+-  libltdl7
+-  liblz4-1
+-  liblzma5
+-  liblzo2-2
+-  libmd0
+-  libmd4c0
+-  libminizip-dev
+-  libminizip1
+-  libmount-dev
+-  libmount1
+-  libmtdev1
+-  libncurses-dev
+-  libncurses6
+-  libncursesw6
+-  libnettle8
+-  libnghttp2-14
+-  libnsl2
+-  libnspr4
+-  libnspr4-dev
+-  libnss-db
+-  libnss3
+-  libnss3-dev
+-  libogg-dev
+-  libogg0
+-  libopengl0
+-  libopus-dev
+-  libopus0
+-  libp11-kit0
+-  libpam0g
+-  libpam0g-dev
+-  libpango-1.0-0
+-  libpango1.0-dev
+-  libpangocairo-1.0-0
+-  libpangoft2-1.0-0
+-  libpangox-1.0-0
+-  libpangoxft-1.0-0
+-  libpci-dev
+-  libpci3
+-  libpciaccess0
+-  libpcre16-3
+-  libpcre2-16-0
+-  libpcre2-32-0
+-  libpcre2-8-0
+-  libpcre2-dev
+-  libpcre2-posix2
+-  libpcre3
+-  libpcre3-dev
+-  libpcre32-3
+-  libpcrecpp0v5
+-  libpipewire-0.3-0
+-  libpipewire-0.3-dev
+-  libpixman-1-0
+-  libpixman-1-dev
+-  libpng-dev
+-  libpng16-16
+-  libproxy1v5
+-  libpsl5
+-  libpthread-stubs0-dev
+-  libpulse-dev
+-  libpulse-mainloop-glib0
+-  libpulse0
+-  libqt5concurrent5
+-  libqt5core5a
+-  libqt5dbus5
+-  libqt5gui5
+-  libqt5network5
+-  libqt5printsupport5
+-  libqt5sql5
+-  libqt5test5
+-  libqt5widgets5
+-  libqt5xml5
+-  libqt6concurrent6
+-  libqt6core6
+-  libqt6dbus6
+-  libqt6gui6
+-  libqt6network6
+-  libqt6opengl6
+-  libqt6openglwidgets6
+-  libqt6printsupport6
+-  libqt6sql6
+-  libqt6test6
+-  libqt6widgets6
+-  libqt6xml6
+-  libre2-9
+-  libre2-dev
+-  librest-0.7-0
+-  librtmp1
+-  libsasl2-2
+-  libselinux1
+-  libselinux1-dev
+-  libsepol1
+-  libsepol1-dev
+-  libsm6
+-  libsnappy-dev
+-  libsnappy1v5
+-  libsndfile1
+-  libsoup-gnome2.4-1
+-  libsoup2.4-1
+-  libspa-0.2-dev
+-  libspeechd-dev
+-  libspeechd2
+-  libsqlite3-0
+-  libssh2-1
+-  libssl-dev
+-  libssl1.1
+   libstdc++-10-dev
+   libstdc++6
+-  libsystemd-dev
+-  libsystemd0
+-  libtasn1-6
+-  libthai-dev
+-  libthai0
+-  libtiff-dev
+-  libtiff5
+-  libtiff6
+-  libtiffxx5
+-  libtinfo6
+-  libtirpc3
+-  libts0
+-  libudev-dev
+-  libudev1
+-  libunbound8
+-  libunistring2
+-  libutempter-dev
+-  libutempter0
+-  libuuid1
+-  libva-dev
+-  libva-drm2
+-  libva-glx2
+-  libva-wayland2
+-  libva-x11-2
+-  libva2
+-  libvorbis0a
+-  libvorbisenc2
+-  libvulkan-dev
+-  libvulkan1
+-  libwacom2
+-  libwayland-bin
+-  libwayland-client0
+-  libwayland-cursor0
+-  libwayland-dev
+-  libwayland-egl-backend-dev
+-  libwayland-egl1
+-  libwayland-egl1-mesa
+-  libwayland-server0
+-  libwebp-dev
+-  libwebp6
+-  libwebp7
+-  libwebpdemux2
+-  libwebpmux3
+-  libwrap0
+-  libx11-6
+-  libx11-dev
+-  libx11-xcb-dev
+-  libx11-xcb1
+-  libxau-dev
+-  libxau6
+-  libxcb-dri2-0
+-  libxcb-dri2-0-dev
+-  libxcb-dri3-0
+-  libxcb-dri3-dev
+-  libxcb-glx0
+-  libxcb-glx0-dev
+-  libxcb-icccm4
+-  libxcb-image0
+-  libxcb-image0-dev
+-  libxcb-keysyms1
+-  libxcb-present-dev
+-  libxcb-present0
+-  libxcb-randr0
+-  libxcb-randr0-dev
+-  libxcb-render-util0
+-  libxcb-render-util0-dev
+-  libxcb-render0
+-  libxcb-render0-dev
+-  libxcb-shape0
+-  libxcb-shape0-dev
+-  libxcb-shm0
+-  libxcb-shm0-dev
+-  libxcb-sync-dev
+-  libxcb-sync1
+-  libxcb-util-dev
+-  libxcb-util1
+-  libxcb-xfixes0
+-  libxcb-xfixes0-dev
+-  libxcb-xinerama0
+-  libxcb-xinput0
+-  libxcb-xkb1
+-  libxcb1
+-  libxcb1-dev
+-  libxcomposite-dev
+-  libxcomposite1
+-  libxcursor-dev
+-  libxcursor1
+-  libxdamage-dev
+-  libxdamage1
+-  libxdmcp-dev
+-  libxdmcp6
+-  libxext-dev
+-  libxext6
+-  libxfixes-dev
+-  libxfixes3
+-  libxft-dev
+-  libxft2
+-  libxi-dev
+-  libxi6
+-  libxinerama-dev
+-  libxinerama1
+-  libxkbcommon-dev
+-  libxkbcommon-x11-0
+-  libxkbcommon0
+-  libxml2
+-  libxml2-dev
+-  libxrandr-dev
+-  libxrandr2
+-  libxrender-dev
+-  libxrender1
+-  libxshmfence-dev
+-  libxshmfence1
+-  libxslt1-dev
+-  libxslt1.1
+-  libxss-dev
+-  libxss1
+-  libxt-dev
+-  libxt6
+-  libxtst-dev
+-  libxtst6
+-  libxxf86vm-dev
+-  libxxf86vm1
+-  libzstd1
+   linux-libc-dev
+-  mesa-common-dev
+-  qt6-base-dev
+-  qt6-base-dev-tools
+-  qtbase5-dev
+-  qtbase5-dev-tools
+-  shared-mime-info
+-  uuid-dev
+-  wayland-protocols
+-  x11proto-dev
+-  zlib1g
+-  zlib1g-dev
+ "
+ 
+ DEBIAN_PACKAGES_AMD64="
+   libasan6
+-  libdrm-intel1
+   libitm1
+   liblsan0
+   libquadmath0
+   libtsan0
+   libubsan1
+-  valgrind
+ "
+ 
+ DEBIAN_PACKAGES_I386="
+   libasan6
+-  libdrm-intel1
+   libitm1
+   libquadmath0
+   libubsan1
+-  valgrind
+ "
+ 
+ DEBIAN_PACKAGES_ARMHF="
+   libasan6
+-  libdrm-etnaviv1
+-  libdrm-exynos1
+-  libdrm-freedreno1
+-  libdrm-omap1
+-  libdrm-tegra0
+   libubsan1
+-  valgrind
+ "
+ 
+ DEBIAN_PACKAGES_ARM64="
+   libasan6
+-  libdrm-etnaviv1
+-  libdrm-freedreno1
+-  libdrm-tegra0
+   libgmp10
+   libitm1
+   liblsan0
+-  libthai0
+   libtsan0
+   libubsan1
+-  valgrind
+ "
+ 
+ DEBIAN_PACKAGES_ARMEL="
+   libasan6
+-  libdrm-exynos1
+-  libdrm-freedreno1
+-  libdrm-omap1
+-  libdrm-tegra0
+   libubsan1
+ "
+ 
+@@ -509,7 +94,9 @@ DEBIAN_PACKAGES_MIPSEL="
+ "
+ 
+ DEBIAN_PACKAGES_MIPS64EL="
+-  valgrind
++"
++
++DEBIAN_PACKAGES_RISCV64="
+ "
+ 
+ readonly REQUIRED_TOOLS="curl xzcat"
+@@ -628,6 +215,12 @@ SetEnvironmentVariables() {
+       TRIPLE=mips64el-linux-gnuabi64
+       DEBIAN_PACKAGES_ARCH="${DEBIAN_PACKAGES_MIPS64EL}"
+       ;;
++    riscv64)
++      TRIPLE=riscv64-linux-gnu
++      DEBIAN_PACKAGES_ARCH="${DEBIAN_PACKAGES_RISCV64}"
++      # RISCV64 has no support in bookworm
++      APT_SOURCES_LIST=("https://snapshot.debian.org/archive/debian-ports/20230724T141507Z/ sid main")
++      ;;
+     *)
+       echo "ERROR: Unsupported architecture: $ARCH"
+       Usage
+@@ -747,13 +340,6 @@ StripChecksumsFromPackageList() {
+ HacksAndPatches() {
+   Banner "Misc Hacks & Patches"
+ 
+-  # Remove an unnecessary dependency on qtchooser.
+-  rm "${INSTALL_ROOT}/usr/lib/${TRIPLE}/qt-default/qtchooser/default.conf"
+-
+-  # libxcomposite1 is missing a symbols file.
+-  cp "${SCRIPT_DIR}/libxcomposite1-symbols" \
+-    "${INSTALL_ROOT}/debian/libxcomposite1/DEBIAN/symbols"
+-
+   # __GLIBC_MINOR__ is used as a feature test macro.  Replace it with the
+   # earliest supported version of glibc (2.26, obtained from the oldest glibc
+   # version in //chrome/installer/linux/debian/dist_packag_versions.json and
+@@ -777,12 +363,11 @@ HacksAndPatches() {
+   local stdlib_h="${usr_include}/stdlib.h"
+   sed -i '/#include <stddef.h>/a #include <limits.h>' "${stdlib_h}"
+ 
+-  # This is for chrome's ./build/linux/pkg-config-wrapper
+-  # which overwrites PKG_CONFIG_LIBDIR internally
+-  SubBanner "Move pkgconfig scripts"
+-  mkdir -p ${INSTALL_ROOT}/usr/lib/pkgconfig
+-  mv ${INSTALL_ROOT}/usr/lib/${TRIPLE}/pkgconfig/* \
+-      ${INSTALL_ROOT}/usr/lib/pkgconfig
++  # RISCV64 is new and has no backward compatibility.
++  # Reversioning would remove necessary symbols and cause linking failures.
++  if [ "$ARCH" = "riscv64" ]; then
++    return
++  fi
+ 
+   # Avoid requiring unsupported glibc versions.
+   "${SCRIPT_DIR}/reversion_glibc.py" \
+@@ -903,7 +488,6 @@ BuildSysroot() {
+   HacksAndPatches
+   CleanupJailSymlinks
+   VerifyLibraryDeps
+-  CreateTarBall
+ }
+ 
+ UploadSysroot() {
+@@ -982,7 +566,7 @@ GeneratePackageListImpl() {
+   local failed=0
+   for pkg in $@ ; do
+     local pkg_full=$(grep -A 1 " ${pkg}\$" "$input_file" | \
+-      egrep "pool/.*" | sed 's/.*Filename: //')
++      egrep "/pool" | sed 's/.*Filename: //')
+     if [ -z "${pkg_full}" ]; then
+       echo "ERROR: missing package: $pkg"
+       local failed=1
+diff --git a/chromium/build/linux/sysroot_scripts/sysroots.json b/chromium/build/linux/sysroot_scripts/sysroots.json
+index 156d4c630..d23c82c04 100644
+--- a/chromium/build/linux/sysroot_scripts/sysroots.json
++++ b/chromium/build/linux/sysroot_scripts/sysroots.json
+@@ -47,5 +47,11 @@
+         "SysrootDir": "debian_bullseye_mipsel-sysroot",
+         "Tarball": "debian_bullseye_mipsel_sysroot.tar.xz",
+         "URL": "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain"
++    },
++    "bullseye_riscv64": {
++        "Key": "",
++        "Sha1Sum": "",
++        "SysrootDir": "debian_bullseye_riscv64-sysroot",
++        "Tarball": "debian_bullseye_riscv64_sysroot.tar.xz"
+     }
+ }
+diff --git a/chromium/build/toolchain/openwrt/BUILD.gn b/chromium/build/toolchain/openwrt/BUILD.gn
+new file mode 100644
+index 000000000..d05b4503d
+--- /dev/null
++++ b/chromium/build/toolchain/openwrt/BUILD.gn
+@@ -0,0 +1,15 @@
++# Copyright 2013 The Chromium Authors. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++import("//build/config/sysroot.gni")
++import("//build/toolchain/gcc_toolchain.gni")
++
++assert(target_os == "openwrt")
++
++clang_toolchain(target_cpu) {
++  toolchain_args = {
++    current_cpu = target_cpu
++    current_os = "openwrt"
++  }
++}
+diff --git a/chromium/build_overrides/build.gni b/chromium/build_overrides/build.gni
+index 1ffa8c229..c4b0e7609 100644
+--- a/chromium/build_overrides/build.gni
++++ b/chromium/build_overrides/build.gni
+@@ -11,7 +11,7 @@ import("//build/config/gclient_args.gni")
+ # default_android_ndk_version = "r10e"
+ 
+ # Some non-Chromium builds don't support building java targets.
+-enable_java_templates = true
++enable_java_templates = false
+ 
+ # Enables assertions on safety checks in libc++.
+ #
+diff --git a/chromium/buildtools/third_party/libc++/BUILD.gn b/chromium/buildtools/third_party/libc++/BUILD.gn
+index 448459ee9..4c9987b01 100644
+--- a/chromium/buildtools/third_party/libc++/BUILD.gn
++++ b/chromium/buildtools/third_party/libc++/BUILD.gn
+@@ -164,8 +164,6 @@ target(_libcxx_target_type, "libc++") {
+   }
+   configs -= [
+     "//build/config/compiler:chromium_code",
+-    "//build/config/compiler:no_exceptions",
+-    "//build/config/compiler:no_rtti",
+     "//build/config/coverage:default_coverage",
+   ]
+   if ((is_android || is_apple) && libcxx_is_shared) {
+@@ -179,8 +177,6 @@ target(_libcxx_target_type, "libc++") {
+   configs += [
+     ":config",
+     "//build/config/compiler:no_chromium_code",
+-    "//build/config/compiler:exceptions",
+-    "//build/config/compiler:rtti",
+   ]
+ 
+   if (libcxx_is_shared && !is_win) {
+diff --git a/chromium/buildtools/third_party/libc++abi/BUILD.gn b/chromium/buildtools/third_party/libc++abi/BUILD.gn
+index b5c15a0ea..8bcf728fd 100644
+--- a/chromium/buildtools/third_party/libc++abi/BUILD.gn
++++ b/chromium/buildtools/third_party/libc++abi/BUILD.gn
+@@ -98,4 +98,34 @@ source_set("libc++abi") {
+ 
+   # libc++abi depends on libc++ internals.
+   include_dirs = [ "//third_party/libc++/src/src" ]
++  if (!is_apple) {
++    sources -= [
++      "//third_party/libc++abi/src/src/cxa_exception.cpp",
++      "//third_party/libc++abi/src/src/cxa_personality.cpp",
++      "//third_party/libc++abi/src/src/private_typeinfo.cpp",
++    ]
++    sources += [
++      "//third_party/libc++abi/src/src/cxa_noexception.cpp",
++    ]
++    defines += [ "_LIBCXXABI_NO_EXCEPTIONS" ]
++    configs -= [
++      "//build/config/compiler:exceptions",
++      "//build/config/compiler:rtti",
++    ]
++    configs += [
++      "//build/config/compiler:no_exceptions",
++      "//build/config/compiler:no_rtti",
++    ]
++  }
++  if (is_android) {
++    sources += [
++      "//third_party/libc++abi/src/src/private_typeinfo.cpp",
++    ]
++    configs -= [
++      "//build/config/compiler:no_rtti",
++    ]
++    configs += [
++      "//build/config/compiler:rtti",
++    ]
++  }
+ }
+diff --git a/chromium/net/BUILD.gn b/chromium/net/BUILD.gn
+index ebcc7213f..04afeaec9 100644
+--- a/chromium/net/BUILD.gn
++++ b/chromium/net/BUILD.gn
+@@ -724,8 +724,6 @@ component("net") {
+     "log/net_log_values.h",
+     "log/net_log_with_source.cc",
+     "log/net_log_with_source.h",
+-    "log/trace_net_log_observer.cc",
+-    "log/trace_net_log_observer.h",
+     "nqe/cached_network_quality.cc",
+     "nqe/cached_network_quality.h",
+     "nqe/effective_connection_type.cc",
+@@ -1159,32 +1157,17 @@ component("net") {
+ 
+   if (is_android) {
+     sources += [
+-      "android/android_http_util.cc",
+-      "android/cert_verify_result_android.cc",
+       "android/cert_verify_result_android.h",
+-      "android/gurl_utils.cc",
+-      "android/http_auth_negotiate_android.cc",
+       "android/http_auth_negotiate_android.h",
+-      "android/keystore.cc",
+       "android/keystore.h",
+-      "android/network_change_notifier_android.cc",
+       "android/network_change_notifier_android.h",
+-      "android/network_change_notifier_delegate_android.cc",
+       "android/network_change_notifier_delegate_android.h",
+-      "android/network_change_notifier_factory_android.cc",
+       "android/network_change_notifier_factory_android.h",
+-      "android/network_library.cc",
++      "android/network_library_stub.cc",
+       "android/network_library.h",
+-      "android/traffic_stats.cc",
+       "android/traffic_stats.h",
+-      "cert/cert_verify_proc_android.cc",
+       "cert/cert_verify_proc_android.h",
+-      "cert/test_root_certs_android.cc",
+-      "cert/x509_util_android.cc",
+-      "proxy_resolution/proxy_config_service_android.cc",
+       "proxy_resolution/proxy_config_service_android.h",
+-      "ssl/ssl_platform_key_android.cc",
+-      "ssl/ssl_platform_key_android.h",
+     ]
+   }
+ 
+@@ -1226,6 +1209,7 @@ component("net") {
+       "base/network_interfaces_linux.cc",
+       "base/network_interfaces_linux.h",
+       "base/platform_mime_util_linux.cc",
++      "cert/test_root_certs_builtin.cc",
+     ]
+   }
+ 
+@@ -1608,13 +1592,18 @@ component("net") {
+   if (use_platform_icu_alternatives) {
+     if (is_android) {
+       # Use ICU alternative on Android.
+-      sources += [ "base/net_string_util_icu_alternatives_android.cc" ]
++      sources += [
++        "base/filename_util_icu_dummy.cc",
++        "base/net_string_util_icu_alternatives_dummy.cc",
++      ]
+     } else if (is_ios) {
+       # Use ICU alternative on iOS.
+       sources += [ "base/net_string_util_icu_alternatives_ios.mm" ]
+     } else {
+-      assert(false,
+-             "ICU alternative is not implemented for platform: " + target_os)
++      sources += [
++        "base/filename_util_icu_dummy.cc",
++        "base/net_string_util_icu_alternatives_dummy.cc",
++      ]
+     }
+   } else {
+     # Use ICU.
+@@ -1696,7 +1685,7 @@ source_set("net_deps") {
+   }
+ 
+   if (is_android) {
+-    public_deps += [ ":net_jni_headers" ]
++    public_deps += []
+   }
+ 
+   if (is_fuchsia) {
+@@ -1709,7 +1698,7 @@ source_set("net_deps") {
+ 
+   if (use_platform_icu_alternatives) {
+     if (is_android) {
+-      public_deps += [ ":net_jni_headers" ]
++      public_deps += []
+     }
+   } else {
+     public_deps += [
+@@ -1766,9 +1755,6 @@ source_set("net_public_deps") {
+ }
+ 
+ if (is_android) {
+-  java_cpp_enum("effective_connection_type_java") {
+-    sources = [ "//net/nqe/effective_connection_type.h" ]
+-  }
+ }
+ 
+ component("uri_template") {
+diff --git a/chromium/net/android/network_activation_request_stub.cc b/chromium/net/android/network_activation_request_stub.cc
+new file mode 100644
+index 000000000..8596d008c
+--- /dev/null
++++ b/chromium/net/android/network_activation_request_stub.cc
+@@ -0,0 +1,27 @@
++// Copyright 2020 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "net/android/network_activation_request.h"
++
++namespace net {
++namespace android {
++
++NetworkActivationRequest::NetworkActivationRequest(TransportType transport)
++    : task_runner_(base::SequencedTaskRunnerHandle::Get()) {
++  weak_self_ = weak_ptr_factory_.GetWeakPtr();
++}
++
++NetworkActivationRequest::~NetworkActivationRequest() {
++}
++
++void NetworkActivationRequest::NotifyAvailable(JNIEnv* env,
++                                               NetworkHandle network) {
++}
++
++void NetworkActivationRequest::NotifyAvailableOnCorrectSequence(
++    NetworkHandle network) {
++}
++
++}  // namespace android
++}  // namespace net
+diff --git a/chromium/net/android/network_library_stub.cc b/chromium/net/android/network_library_stub.cc
+new file mode 100644
+index 000000000..973f58c70
+--- /dev/null
++++ b/chromium/net/android/network_library_stub.cc
+@@ -0,0 +1,98 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "net/android/network_library.h"
++
++#include "net/base/net_errors.h"
++
++namespace net {
++namespace android {
++
++void VerifyX509CertChain(const std::vector<std::string>& cert_chain,
++                         base::StringPiece auth_type,
++                         base::StringPiece host,
++                         CertVerifyStatusAndroid* status,
++                         bool* is_issued_by_known_root,
++                         std::vector<std::string>* verified_chain) {
++}
++
++void AddTestRootCertificate(const uint8_t* cert, size_t len) {
++}
++
++void ClearTestRootCertificates() {
++}
++
++bool IsCleartextPermitted(const std::string& host) {
++  return true;
++}
++
++bool HaveOnlyLoopbackAddresses() {
++  return false;
++}
++
++bool GetMimeTypeFromExtension(const std::string& extension,
++                              std::string* result) {
++  return false;
++}
++
++std::string GetTelephonyNetworkOperator() {
++  return {};
++}
++
++std::string GetTelephonySimOperator() {
++  return {};
++}
++
++bool GetIsRoaming() {
++  return false;
++}
++
++bool GetIsCaptivePortal() {
++  return false;
++}
++
++std::string GetWifiSSID() {
++  return {};
++}
++
++absl::optional<int32_t> GetWifiSignalLevel() {
++  return {};
++}
++
++bool GetCurrentDnsServers(std::vector<IPEndPoint>* dns_servers,
++                          bool* dns_over_tls_active,
++                          std::string* dns_over_tls_hostname,
++                          std::vector<std::string>* search_suffixes) {
++  return false;
++}
++
++bool GetDnsServersForNetwork(std::vector<IPEndPoint>* dns_servers,
++                             bool* dns_over_tls_active,
++                             std::string* dns_over_tls_hostname,
++                             std::vector<std::string>* search_suffixes,
++                             handles::NetworkHandle network) {
++  return false;
++}
++
++bool ReportBadDefaultNetwork() {
++  return false;
++}
++
++void TagSocket(SocketDescriptor socket, uid_t uid, int32_t tag) {
++}
++
++int BindToNetwork(SocketDescriptor socket, handles::NetworkHandle network) {
++  return ERR_NOT_IMPLEMENTED;
++}
++
++int GetAddrInfoForNetwork(handles::NetworkHandle network,
++                          const char* node,
++                          const char* service,
++                          const struct addrinfo* hints,
++                          struct addrinfo** res) {
++  return EAI_SYSTEM;
++}
++
++}  // namespace android
++}  // namespace net
+diff --git a/chromium/net/android/radio_activity_tracker_stub.cc b/chromium/net/android/radio_activity_tracker_stub.cc
+new file mode 100644
+index 000000000..34b8ea3cd
+--- /dev/null
++++ b/chromium/net/android/radio_activity_tracker_stub.cc
+@@ -0,0 +1,19 @@
++// Copyright 2021 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "net/android/radio_activity_tracker.h"
++
++#include "net/traffic_annotation/network_traffic_annotation.h"
++
++namespace net {
++namespace android {
++
++void MaybeRecordTCPWriteForWakeupTrigger(
++    const NetworkTrafficAnnotationTag& traffic_annotation) {}
++
++void MaybeRecordUDPWriteForWakeupTrigger(
++    const NetworkTrafficAnnotationTag& traffic_annotation) {}
++
++}  // namespace android
++}  // namespace net
+diff --git a/chromium/net/base/filename_util_icu_dummy.cc b/chromium/net/base/filename_util_icu_dummy.cc
+new file mode 100644
+index 000000000..4c12b707f
+--- /dev/null
++++ b/chromium/net/base/filename_util_icu_dummy.cc
+@@ -0,0 +1,44 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "net/base/filename_util.h"
++
++#include "base/files/file_path.h"
++#include "base/notreached.h"
++
++class GURL;
++
++namespace net {
++
++bool IsSafePortablePathComponent(const base::FilePath& component) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++bool IsSafePortableRelativePath(const base::FilePath& path) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++std::u16string GetSuggestedFilename(const GURL& url,
++                                    const std::string& content_disposition,
++                                    const std::string& referrer_charset,
++                                    const std::string& suggested_name,
++                                    const std::string& mime_type,
++                                    const std::string& default_name) {
++  NOTIMPLEMENTED();
++  return {};
++}
++
++base::FilePath GenerateFileName(const GURL& url,
++                                const std::string& content_disposition,
++                                const std::string& referrer_charset,
++                                const std::string& suggested_name,
++                                const std::string& mime_type,
++                                const std::string& default_file_name) {
++  NOTIMPLEMENTED();
++  return {};
++}
++
++}  // namespace net
+diff --git a/chromium/net/base/net_string_util_icu_alternatives_dummy.cc b/chromium/net/base/net_string_util_icu_alternatives_dummy.cc
+new file mode 100644
+index 000000000..c1cbd972e
+--- /dev/null
++++ b/chromium/net/base/net_string_util_icu_alternatives_dummy.cc
+@@ -0,0 +1,44 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "net/base/net_string_util.h"
++
++#include "base/notreached.h"
++#include "base/strings/string_piece.h"
++
++namespace net {
++
++const char* const kCharsetLatin1 = "";
++
++bool ConvertToUtf8(base::StringPiece text, const char* charset,
++                   std::string* output) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++bool ConvertToUtf8AndNormalize(base::StringPiece text, const char* charset,
++                               std::string* output) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++bool ConvertToUTF16(base::StringPiece text, const char* charset,
++                    std::u16string* output) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++bool ConvertToUTF16WithSubstitutions(base::StringPiece text,
++                                     const char* charset,
++                                     std::u16string* output) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++bool ToUpper(base::StringPiece16 str, std::u16string* output) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++}  // namespace net
+diff --git a/chromium/net/cert/cert_verifier.cc b/chromium/net/cert/cert_verifier.cc
+index cfb73ea63..756316cf9 100644
+--- a/chromium/net/cert/cert_verifier.cc
++++ b/chromium/net/cert/cert_verifier.cc
+@@ -40,7 +40,8 @@ class DefaultCertVerifyProcFactory : public net::CertVerifyProcFactory {
+     return CertVerifyProc::CreateBuiltinWithChromeRootStore(
+         std::move(cert_net_fetcher), impl_params.crl_set,
+         base::OptionalToPtr(impl_params.root_store_data));
+-#elif BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#elif BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+     return CertVerifyProc::CreateBuiltinVerifyProc(std::move(cert_net_fetcher),
+                                                    impl_params.crl_set);
+ #else
+diff --git a/chromium/net/cert/cert_verify_proc.cc b/chromium/net/cert/cert_verify_proc.cc
+index b1dab376a..1fc120487 100644
+--- a/chromium/net/cert/cert_verify_proc.cc
++++ b/chromium/net/cert/cert_verify_proc.cc
+@@ -51,8 +51,9 @@
+ #include "third_party/boringssl/src/include/openssl/pool.h"
+ #include "url/url_canon.h"
+ 
+-#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(USE_NSS_CERTS) || \
+-    BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
++#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(USE_NSS_CERTS) ||               \
++    BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_LINUX)
+ #include "net/cert/cert_verify_proc_builtin.h"
+ #endif
+ 
+@@ -426,7 +427,8 @@ scoped_refptr<CertVerifyProc> CertVerifyProc::CreateSystemVerifyProc(
+ }
+ #endif
+ 
+-#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(USE_NSS_CERTS)
++#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(USE_NSS_CERTS) || \
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
+ // static
+ scoped_refptr<CertVerifyProc> CertVerifyProc::CreateBuiltinVerifyProc(
+     scoped_refptr<CertNetFetcher> cert_net_fetcher,
+diff --git a/chromium/net/cert/cert_verify_proc.h b/chromium/net/cert/cert_verify_proc.h
+index 38bc9fefe..3a72692a3 100644
+--- a/chromium/net/cert/cert_verify_proc.h
++++ b/chromium/net/cert/cert_verify_proc.h
+@@ -88,7 +88,8 @@ class NET_EXPORT CertVerifyProc
+       scoped_refptr<CRLSet> crl_set);
+ #endif
+ 
+-#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(USE_NSS_CERTS)
++#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(USE_NSS_CERTS) || \
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
+   // Creates and returns a CertVerifyProcBuiltin using the SSL SystemTrustStore.
+   static scoped_refptr<CertVerifyProc> CreateBuiltinVerifyProc(
+       scoped_refptr<CertNetFetcher> cert_net_fetcher,
+diff --git a/chromium/net/cert/ev_root_ca_metadata.h b/chromium/net/cert/ev_root_ca_metadata.h
+index 29c31c418..061204722 100644
+--- a/chromium/net/cert/ev_root_ca_metadata.h
++++ b/chromium/net/cert/ev_root_ca_metadata.h
+@@ -17,7 +17,7 @@
+ #include "net/cert/x509_certificate.h"
+ 
+ #if BUILDFLAG(USE_NSS_CERTS) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
+ // When not defined, the EVRootCAMetadata singleton is a dumb placeholder
+ // implementation that will fail all EV lookup operations.
+ #define PLATFORM_USES_CHROMIUM_EV_METADATA
+diff --git a/chromium/net/cert/internal/cert_issuer_source_aia.cc b/chromium/net/cert/internal/cert_issuer_source_aia.cc
+index 2b8b1fa85..52a7d439f 100644
+--- a/chromium/net/cert/internal/cert_issuer_source_aia.cc
++++ b/chromium/net/cert/internal/cert_issuer_source_aia.cc
+@@ -10,6 +10,7 @@
+ #include "net/cert/cert_net_fetcher.h"
+ #include "net/cert/pem.h"
+ #include "net/cert/pki/cert_errors.h"
++#include "net/cert/x509_certificate.h"
+ #include "net/cert/x509_util.h"
+ #include "url/gurl.h"
+ 
+@@ -156,6 +157,22 @@ bool AiaRequest::AddCompletedFetchToResults(Error error,
+   //    certificates MUST be able to accept individual DER encoded
+   //    certificates and SHOULD be able to accept "certs-only" CMS messages.
+ 
++  // Handles PKCS#7 encoded certificates
++  CertificateList certs = X509Certificate::CreateCertificateListFromBytes(
++      fetched_bytes, X509Certificate::FORMAT_AUTO);
++  bool certs_ok = false;
++  for (const auto& cert : certs) {
++    auto parsed = ParsedCertificate::Create(
++        bssl::UpRef(cert->cert_buffer()),
++        x509_util::DefaultParseCertificateOptions(), /*errors=*/nullptr);
++    if (parsed) {
++      results->push_back(parsed);
++      certs_ok = true;
++    }
++  }
++  if (certs_ok)
++    return true;
++
+   // TODO(https://crbug.com/870359): Some AIA responses are served as PEM, which
+   // is not part of RFC 5280's profile.
+   return ParseCertFromDer(fetched_bytes, results) ||
+diff --git a/chromium/net/cert/internal/system_trust_store.cc b/chromium/net/cert/internal/system_trust_store.cc
+index 3ad2a4ef4..457c15206 100644
+--- a/chromium/net/cert/internal/system_trust_store.cc
++++ b/chromium/net/cert/internal/system_trust_store.cc
+@@ -19,12 +19,17 @@
+ #include <Security/Security.h>
+ #endif
+ 
++#include <array>
+ #include <memory>
++#include <vector>
+ 
++#include "base/environment.h"
++#include "base/files/file_enumerator.h"
+ #include "base/files/file_path.h"
+ #include "base/files/file_util.h"
+ #include "base/logging.h"
+ #include "base/no_destructor.h"
++#include "base/strings/string_split.h"
+ #include "base/task/task_traits.h"
+ #include "base/task/thread_pool.h"
+ #include "build/build_config.h"
+@@ -49,8 +54,8 @@
+ #include "third_party/boringssl/src/include/openssl/pool.h"
+ #elif BUILDFLAG(IS_WIN)
+ #include "net/cert/internal/trust_store_win.h"
+-#elif BUILDFLAG(IS_ANDROID)
+-#include "net/cert/internal/trust_store_android.h"
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
++#include "base/lazy_instance.h"
+ #endif
+ #if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+ #include "net/cert/internal/trust_store_chrome.h"
+@@ -315,6 +320,172 @@ std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStore() {
+   return std::make_unique<SystemTrustStoreFuchsia>();
+ }
+ 
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
++
++namespace {
++
++// Copied from https://golang.org/src/crypto/x509/root_linux.go
++// Possible certificate files; stop after finding one.
++constexpr std::array<const char*, 6> kStaticRootCertFiles = {
++    "/etc/ssl/certs/ca-certificates.crt",  // Debian/Ubuntu/Gentoo etc.
++    "/etc/pki/tls/certs/ca-bundle.crt",    // Fedora/RHEL 6
++    "/etc/ssl/ca-bundle.pem",              // OpenSUSE
++    "/etc/pki/tls/cacert.pem",             // OpenELEC
++    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",  // CentOS/RHEL 7
++    "/etc/ssl/cert.pem",                                  // Alpine Linux
++};
++
++// Possible directories with certificate files; stop after successfully
++// reading at least one file from a directory.
++constexpr std::array<const char*, 3> kStaticRootCertDirs = {
++    "/etc/ssl/certs",      // SLES10/SLES11, https://golang.org/issue/12139
++    "/etc/pki/tls/certs",  // Fedora/RHEL
++    "/system/etc/security/cacerts",  // Android
++};
++
++// The environment variable which identifies where to locate the SSL
++// certificate file. If set this overrides the system default.
++constexpr char kStaticCertFileEnv[] = "SSL_CERT_FILE";
++
++// The environment variable which identifies which directory to check for SSL
++// certificate files. If set this overrides the system default. It is a colon
++// separated list of directories.
++// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
++constexpr char kStaticCertDirsEnv[] = "SSL_CERT_DIR";
++
++class StaticUnixSystemCerts {
++ public:
++  StaticUnixSystemCerts() : system_trust_store_(Create()) {}
++
++  TrustStoreInMemory* system_trust_store() { return system_trust_store_.get(); }
++
++  static std::unique_ptr<TrustStoreInMemory> Create() {
++    auto ptr = std::make_unique<TrustStoreInMemory>();
++    auto env = base::Environment::Create();
++    std::string env_value;
++
++    std::vector<std::string> cert_filenames(kStaticRootCertFiles.begin(),
++                                            kStaticRootCertFiles.end());
++    if (env->GetVar(kStaticCertFileEnv, &env_value) && !env_value.empty()) {
++      cert_filenames = {env_value};
++    }
++
++    bool cert_file_ok = false;
++    for (const auto& filename : cert_filenames) {
++      std::string file;
++      if (!base::ReadFileToString(base::FilePath(filename), &file))
++        continue;
++      if (AddCertificatesFromBytes(file.data(), file.size(), ptr.get())) {
++        cert_file_ok = true;
++        break;
++      }
++    }
++
++    std::vector<std::string> cert_dirnames(kStaticRootCertDirs.begin(),
++                                           kStaticRootCertDirs.end());
++    if (env->GetVar(kStaticCertDirsEnv, &env_value) && !env_value.empty()) {
++      cert_dirnames = base::SplitString(env_value, ":", base::TRIM_WHITESPACE,
++                                        base::SPLIT_WANT_NONEMPTY);
++    }
++
++    bool cert_dir_ok = false;
++    for (const auto& dir : cert_dirnames) {
++      base::FileEnumerator e(base::FilePath(dir),
++                             /*recursive=*/true, base::FileEnumerator::FILES);
++      for (auto filename = e.Next(); !filename.empty(); filename = e.Next()) {
++        std::string file;
++        if (!base::ReadFileToString(filename, &file)) {
++          continue;
++        }
++        if (AddCertificatesFromBytes(file.data(), file.size(), ptr.get())) {
++          cert_dir_ok = true;
++        }
++      }
++      if (cert_dir_ok)
++        break;
++    }
++
++    if (!cert_file_ok && !cert_dir_ok) {
++      LOG(ERROR) << "No CA certificates were found. Try using environment "
++                    "variable SSL_CERT_FILE or SSL_CERT_DIR";
++    }
++
++    return ptr;
++  }
++
++ private:
++  static bool AddCertificatesFromBytes(const char* data,
++                                       size_t length,
++                                       TrustStoreInMemory* store) {
++    auto certs = X509Certificate::CreateCertificateListFromBytes(
++        {reinterpret_cast<const uint8_t*>(data), length},
++        X509Certificate::FORMAT_AUTO);
++    bool certs_ok = false;
++    for (const auto& cert : certs) {
++      CertErrors errors;
++      auto parsed = ParsedCertificate::Create(
++          bssl::UpRef(cert->cert_buffer()),
++          x509_util::DefaultParseCertificateOptions(), &errors);
++      if (parsed) {
++        if (!store->Contains(parsed.get())) {
++          store->AddTrustAnchor(parsed);
++        }
++        certs_ok = true;
++      } else {
++        LOG(ERROR) << errors.ToDebugString();
++      }
++    }
++    return certs_ok;
++  }
++
++  std::unique_ptr<TrustStoreInMemory> system_trust_store_;
++};
++
++base::LazyInstance<StaticUnixSystemCerts>::Leaky g_root_certs_static_unix =
++    LAZY_INSTANCE_INITIALIZER;
++
++}  // namespace
++
++class SystemTrustStoreStaticUnix : public SystemTrustStore {
++ public:
++  SystemTrustStoreStaticUnix() = default;
++
++  TrustStore* GetTrustStore() override {
++    return g_root_certs_static_unix.Get().system_trust_store();
++  }
++
++  bool UsesSystemTrustStore() const override { return true; }
++
++  bool IsKnownRoot(const ParsedCertificate* trust_anchor) const override {
++    return g_root_certs_static_unix.Get().system_trust_store()->Contains(
++        trust_anchor);
++  }
++
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
++  int64_t chrome_root_store_version() override { return 0; }
++#endif
++};
++
++std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStore() {
++  return std::make_unique<SystemTrustStoreStaticUnix>();
++}
++
++#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
++
++std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStoreChromeRoot(
++    std::unique_ptr<TrustStoreChrome> chrome_root) {
++  return std::make_unique<SystemTrustStoreChrome>(
++      std::move(chrome_root), StaticUnixSystemCerts::Create());
++}
++
++#else
++
++std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStoreChromeRoot() {
++  return std::make_unique<DummySystemTrustStore>();
++}
++
++#endif  // CHROME_ROOT_STORE_SUPPORTED
++
+ #elif BUILDFLAG(IS_WIN)
+ 
+ // Using the Builtin Verifier w/o the Chrome Root Store is unsupported on
+diff --git a/chromium/net/dns/dns_reloader.cc b/chromium/net/dns/dns_reloader.cc
+index 363eb14dc..cc7d36f54 100644
+--- a/chromium/net/dns/dns_reloader.cc
++++ b/chromium/net/dns/dns_reloader.cc
+@@ -88,20 +88,32 @@ class DnsReloader : public NetworkChangeNotifier::DNSObserver {
+     if (!reload_state) {
+       auto new_reload_state = std::make_unique<ReloadState>();
+       new_reload_state->resolver_generation = resolver_generation_;
++#ifdef __MUSL__
++      res_init();
++#else
+       res_ninit(&_res);
++#endif
+       tls_reload_state_.Set(std::move(new_reload_state));
+     } else if (reload_state->resolver_generation != resolver_generation_) {
+       reload_state->resolver_generation = resolver_generation_;
+       // It is safe to call res_nclose here since we know res_ninit will have
+       // been called above.
++#ifdef __MUSL__
++      res_init();
++#else
+       res_nclose(&_res);
+       res_ninit(&_res);
++#endif
+     }
+   }
+ 
+  private:
+   struct ReloadState {
+-    ~ReloadState() { res_nclose(&_res); }
++    ~ReloadState() {
++#ifndef __MUSL__
++      res_nclose(&_res);
++#endif
++    }
+ 
+     int resolver_generation;
+   };
+diff --git a/chromium/net/dns/public/scoped_res_state.cc b/chromium/net/dns/public/scoped_res_state.cc
+index 2743697bf..f8bef3e37 100644
+--- a/chromium/net/dns/public/scoped_res_state.cc
++++ b/chromium/net/dns/public/scoped_res_state.cc
+@@ -13,7 +13,7 @@
+ namespace net {
+ 
+ ScopedResState::ScopedResState() {
+-#if BUILDFLAG(IS_OPENBSD) || BUILDFLAG(IS_FUCHSIA)
++#if BUILDFLAG(IS_OPENBSD) || BUILDFLAG(IS_FUCHSIA) || defined(__MUSL__)
+   // Note: res_ninit in glibc always returns 0 and sets RES_INIT.
+   // res_init behaves the same way.
+   memset(&_res, 0, sizeof(_res));
+@@ -25,7 +25,7 @@ ScopedResState::ScopedResState() {
+ }
+ 
+ ScopedResState::~ScopedResState() {
+-#if !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA)
++#if !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA) && !defined(__MUSL__)
+ 
+   // Prefer res_ndestroy where available.
+ #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_FREEBSD)
+@@ -43,7 +43,7 @@ bool ScopedResState::IsValid() const {
+ 
+ const struct __res_state& ScopedResState::state() const {
+   DCHECK(IsValid());
+-#if BUILDFLAG(IS_OPENBSD) || BUILDFLAG(IS_FUCHSIA)
++#if BUILDFLAG(IS_OPENBSD) || BUILDFLAG(IS_FUCHSIA) || defined(__MUSL__)
+   return _res;
+ #else
+   return res_;
+diff --git a/chromium/net/dns/public/scoped_res_state.h b/chromium/net/dns/public/scoped_res_state.h
+index c979c7572..fe0dffbdf 100644
+--- a/chromium/net/dns/public/scoped_res_state.h
++++ b/chromium/net/dns/public/scoped_res_state.h
+@@ -31,7 +31,7 @@ class NET_EXPORT ScopedResState {
+   virtual const struct __res_state& state() const;
+ 
+  private:
+-#if !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA)
++#if !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA) && !defined(__MUSL__)
+   struct __res_state res_;
+ #endif  // !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA)
+ 
+diff --git a/chromium/net/quic/quic_proxy_client_socket.cc b/chromium/net/quic/quic_proxy_client_socket.cc
+index 2056091b1..7846c6d0a 100644
+--- a/chromium/net/quic/quic_proxy_client_socket.cc
++++ b/chromium/net/quic/quic_proxy_client_socket.cc
+@@ -38,6 +38,8 @@ QuicProxyClientSocket::QuicProxyClientSocket(
+       proxy_server_(proxy_server),
+       proxy_delegate_(proxy_delegate),
+       user_agent_(user_agent),
++      use_fastopen_(false),
++      read_headers_pending_(false),
+       net_log_(net_log) {
+   DCHECK(stream_->IsOpen());
+ 
+@@ -306,6 +308,16 @@ int QuicProxyClientSocket::DoLoop(int last_io_result) {
+         rv = DoReadReplyComplete(rv);
+         net_log_.EndEventWithNetErrorCode(
+             NetLogEventType::HTTP_TRANSACTION_TUNNEL_READ_HEADERS, rv);
++        if (use_fastopen_ && read_headers_pending_) {
++          read_headers_pending_ = false;
++          if (rv < 0) {
++            // read_callback_ will be called with this error and be reset.
++            // Further data after that will be ignored.
++            next_state_ = STATE_DISCONNECTED;
++          }
++          // Prevents calling connect_callback_.
++          rv = ERR_IO_PENDING;
++        }
+         break;
+       default:
+         NOTREACHED() << "bad state";
+@@ -346,6 +358,11 @@ int QuicProxyClientSocket::DoSendRequest() {
+     HttpRequestHeaders proxy_delegate_headers;
+     proxy_delegate_->OnBeforeTunnelRequest(proxy_server_,
+                                            &proxy_delegate_headers);
++    if (proxy_delegate_headers.HasHeader("fastopen")) {
++      proxy_delegate_headers.RemoveHeader("fastopen");
++      // TODO(klzgrad): look into why Fast Open does not work.
++      use_fastopen_ = true;
++    }
+     request_.extra_headers.MergeFrom(proxy_delegate_headers);
+   }
+ 
+@@ -385,6 +402,11 @@ int QuicProxyClientSocket::DoReadReply() {
+       &response_header_block_,
+       base::BindOnce(&QuicProxyClientSocket::OnReadResponseHeadersComplete,
+                      weak_factory_.GetWeakPtr()));
++  if (use_fastopen_ && rv == ERR_IO_PENDING) {
++    read_headers_pending_ = true;
++    next_state_ = STATE_CONNECT_COMPLETE;
++    return OK;
++  }
+   if (rv == ERR_IO_PENDING)
+     return ERR_IO_PENDING;
+   if (rv < 0)
+@@ -433,6 +455,13 @@ int QuicProxyClientSocket::DoReadReplyComplete(int result) {
+ 
+ void QuicProxyClientSocket::OnReadResponseHeadersComplete(int result) {
+   // Convert the now-populated spdy::Http2HeaderBlock to HttpResponseInfo
++  if (use_fastopen_ && read_headers_pending_) {
++    if (next_state_ == STATE_DISCONNECTED)
++      return;
++    if (next_state_ == STATE_CONNECT_COMPLETE)
++      next_state_ = STATE_READ_REPLY_COMPLETE;
++  }
++
+   if (result > 0)
+     result = ProcessResponseHeaders(response_header_block_);
+ 
+diff --git a/chromium/net/quic/quic_proxy_client_socket.h b/chromium/net/quic/quic_proxy_client_socket.h
+index 365aa365e..a956917f1 100644
+--- a/chromium/net/quic/quic_proxy_client_socket.h
++++ b/chromium/net/quic/quic_proxy_client_socket.h
+@@ -144,6 +144,12 @@ class NET_EXPORT_PRIVATE QuicProxyClientSocket : public ProxyClientSocket {
+ 
+   std::string user_agent_;
+ 
++  // Session connect timing info.
++  LoadTimingInfo::ConnectTiming connect_timing_;
++
++  bool use_fastopen_;
++  bool read_headers_pending_;
++
+   const NetLogWithSource net_log_;
+ 
+   // The default weak pointer factory.
+diff --git a/chromium/net/socket/client_socket_pool_manager.cc b/chromium/net/socket/client_socket_pool_manager.cc
+index 521ebc8f5..6d87cf9d0 100644
+--- a/chromium/net/socket/client_socket_pool_manager.cc
++++ b/chromium/net/socket/client_socket_pool_manager.cc
+@@ -31,8 +31,8 @@ namespace {
+ 
+ // Limit of sockets of each socket pool.
+ int g_max_sockets_per_pool[] = {
+-  256,  // NORMAL_SOCKET_POOL
+-  256   // WEBSOCKET_SOCKET_POOL
++    256,  // NORMAL_SOCKET_POOL
++    256   // WEBSOCKET_SOCKET_POOL
+ };
+ 
+ static_assert(std::size(g_max_sockets_per_pool) ==
+@@ -60,8 +60,8 @@ static_assert(std::size(g_max_sockets_per_group) ==
+ // http and SOCKS proxies.  See http://crbug.com/12066 and
+ // http://crbug.com/44501 for details about proxy server connection limits.
+ int g_max_sockets_per_proxy_server[] = {
+-  kDefaultMaxSocketsPerProxyServer,  // NORMAL_SOCKET_POOL
+-  kDefaultMaxSocketsPerProxyServer   // WEBSOCKET_SOCKET_POOL
++    kDefaultMaxSocketsPerProxyServer,  // NORMAL_SOCKET_POOL
++    kDefaultMaxSocketsPerProxyServer   // WEBSOCKET_SOCKET_POOL
+ };
+ 
+ static_assert(std::size(g_max_sockets_per_proxy_server) ==
+@@ -161,7 +161,6 @@ void ClientSocketPoolManager::set_max_sockets_per_pool(
+     HttpNetworkSession::SocketPoolType pool_type,
+     int socket_count) {
+   DCHECK_LT(0, socket_count);
+-  DCHECK_GT(1000, socket_count);  // Sanity check.
+   DCHECK_LT(pool_type, HttpNetworkSession::NUM_SOCKET_POOL_TYPES);
+   g_max_sockets_per_pool[pool_type] = socket_count;
+   DCHECK_GE(g_max_sockets_per_pool[pool_type],
+@@ -181,7 +180,6 @@ void ClientSocketPoolManager::set_max_sockets_per_group(
+     int socket_count) {
+   DCHECK_LT(0, socket_count);
+   // The following is a sanity check... but we should NEVER be near this value.
+-  DCHECK_GT(100, socket_count);
+   DCHECK_LT(pool_type, HttpNetworkSession::NUM_SOCKET_POOL_TYPES);
+   g_max_sockets_per_group[pool_type] = socket_count;
+ 
+@@ -203,7 +201,6 @@ void ClientSocketPoolManager::set_max_sockets_per_proxy_server(
+     HttpNetworkSession::SocketPoolType pool_type,
+     int socket_count) {
+   DCHECK_LT(0, socket_count);
+-  DCHECK_GT(100, socket_count);  // Sanity check.
+   DCHECK_LT(pool_type, HttpNetworkSession::NUM_SOCKET_POOL_TYPES);
+   // Assert this case early on. The max number of sockets per group cannot
+   // exceed the max number of sockets per proxy server.
+@@ -279,6 +276,30 @@ int InitSocketHandleForWebSocketRequest(
+       proxy_auth_callback);
+ }
+ 
++int InitSocketHandleForRawConnect2(
++    url::SchemeHostPort endpoint,
++    int request_load_flags,
++    RequestPriority request_priority,
++    HttpNetworkSession* session,
++    const ProxyInfo& proxy_info,
++    const SSLConfig& ssl_config_for_origin,
++    const SSLConfig& ssl_config_for_proxy,
++    PrivacyMode privacy_mode,
++    NetworkAnonymizationKey network_anonymization_key,
++    const NetLogWithSource& net_log,
++    ClientSocketHandle* socket_handle,
++    CompletionOnceCallback callback) {
++  DCHECK(socket_handle);
++  return InitSocketPoolHelper(
++      std::move(endpoint), request_load_flags, request_priority, session,
++      proxy_info, ssl_config_for_origin, ssl_config_for_proxy,
++      /*is_for_websockets=*/true, privacy_mode,
++      std::move(network_anonymization_key), SecureDnsPolicy::kDisable,
++      SocketTag(), net_log, 0, socket_handle,
++      HttpNetworkSession::NORMAL_SOCKET_POOL, std::move(callback),
++      ClientSocketPool::ProxyAuthCallback());
++}
++
+ int PreconnectSocketsForHttpRequest(
+     url::SchemeHostPort endpoint,
+     int request_load_flags,
+diff --git a/chromium/net/socket/client_socket_pool_manager.h b/chromium/net/socket/client_socket_pool_manager.h
+index cb0f0e9ea..3d3b0c116 100644
+--- a/chromium/net/socket/client_socket_pool_manager.h
++++ b/chromium/net/socket/client_socket_pool_manager.h
+@@ -120,6 +120,20 @@ int InitSocketHandleForWebSocketRequest(
+     CompletionOnceCallback callback,
+     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback);
+ 
++NET_EXPORT int InitSocketHandleForRawConnect2(
++    url::SchemeHostPort endpoint,
++    int request_load_flags,
++    RequestPriority request_priority,
++    HttpNetworkSession* session,
++    const ProxyInfo& proxy_info,
++    const SSLConfig& ssl_config_for_origin,
++    const SSLConfig& ssl_config_for_proxy,
++    PrivacyMode privacy_mode,
++    NetworkAnonymizationKey network_anonymization_key,
++    const NetLogWithSource& net_log,
++    ClientSocketHandle* socket_handle,
++    CompletionOnceCallback callback);
++
+ // Similar to InitSocketHandleForHttpRequest except that it initiates the
+ // desired number of preconnect streams from the relevant socket pool.
+ int PreconnectSocketsForHttpRequest(
+diff --git a/chromium/net/socket/client_socket_pool_manager_impl.cc b/chromium/net/socket/client_socket_pool_manager_impl.cc
+index 530f49cd2..0be386c78 100644
+--- a/chromium/net/socket/client_socket_pool_manager_impl.cc
++++ b/chromium/net/socket/client_socket_pool_manager_impl.cc
+@@ -85,8 +85,8 @@ ClientSocketPool* ClientSocketPoolManagerImpl::GetSocketPool(
+     new_pool = std::make_unique<TransportClientSocketPool>(
+         sockets_per_proxy_server, sockets_per_group,
+         unused_idle_socket_timeout(pool_type_), proxy_server,
+-        pool_type_ == HttpNetworkSession::WEBSOCKET_SOCKET_POOL,
+-        &common_connect_job_params_, cleanup_on_ip_address_change_);
++        /*force_tunnel=*/true, &common_connect_job_params_,
++        cleanup_on_ip_address_change_);
+   }
+ 
+   std::pair<SocketPoolMap::iterator, bool> ret =
+diff --git a/chromium/net/spdy/spdy_proxy_client_socket.cc b/chromium/net/spdy/spdy_proxy_client_socket.cc
+index 87cbdd164..830676329 100644
+--- a/chromium/net/spdy/spdy_proxy_client_socket.cc
++++ b/chromium/net/spdy/spdy_proxy_client_socket.cc
+@@ -338,6 +338,20 @@ int SpdyProxyClientSocket::DoLoop(int last_io_result) {
+         rv = DoReadReplyComplete(rv);
+         net_log_.EndEventWithNetErrorCode(
+             NetLogEventType::HTTP_TRANSACTION_TUNNEL_READ_HEADERS, rv);
++        if (use_fastopen_ && read_headers_pending_) {
++          read_headers_pending_ = false;
++          if (rv < 0) {
++            // read_callback_ cannot be called.
++            if (!read_callback_)
++              rv = ERR_IO_PENDING;
++            // read_callback_ will be called with this error and be reset.
++            // Further data after that will be ignored.
++            next_state_ = STATE_DISCONNECTED;
++          } else {
++            // Does not call read_callback_ from here if headers are OK.
++            rv = ERR_IO_PENDING;
++          }
++        }
+         break;
+       default:
+         NOTREACHED() << "bad state";
+@@ -378,6 +392,10 @@ int SpdyProxyClientSocket::DoSendRequest() {
+     HttpRequestHeaders proxy_delegate_headers;
+     proxy_delegate_->OnBeforeTunnelRequest(proxy_server_,
+                                            &proxy_delegate_headers);
++    if (proxy_delegate_headers.HasHeader("fastopen")) {
++      proxy_delegate_headers.RemoveHeader("fastopen");
++      use_fastopen_ = true;
++    }
+     request_.extra_headers.MergeFrom(proxy_delegate_headers);
+   }
+ 
+@@ -400,6 +418,12 @@ int SpdyProxyClientSocket::DoSendRequestComplete(int result) {
+   if (result < 0)
+     return result;
+ 
++  if (use_fastopen_) {
++    read_headers_pending_ = true;
++    next_state_ = STATE_OPEN;
++    return OK;
++  }
++
+   // Wait for HEADERS frame from the server
+   next_state_ = STATE_READ_REPLY_COMPLETE;
+   return ERR_IO_PENDING;
+@@ -460,6 +484,10 @@ void SpdyProxyClientSocket::OnEarlyHintsReceived(
+ 
+ void SpdyProxyClientSocket::OnHeadersReceived(
+     const spdy::Http2HeaderBlock& response_headers) {
++  if (use_fastopen_ && read_headers_pending_ && next_state_ == STATE_OPEN) {
++    next_state_ = STATE_READ_REPLY_COMPLETE;
++  }
++
+   // If we've already received the reply, existing headers are too late.
+   // TODO(mbelshe): figure out a way to make HEADERS frames useful after the
+   //                initial response.
+diff --git a/chromium/net/spdy/spdy_proxy_client_socket.h b/chromium/net/spdy/spdy_proxy_client_socket.h
+index edf025d4b..ec4cc61c2 100644
+--- a/chromium/net/spdy/spdy_proxy_client_socket.h
++++ b/chromium/net/spdy/spdy_proxy_client_socket.h
+@@ -180,6 +180,9 @@ class NET_EXPORT_PRIVATE SpdyProxyClientSocket : public ProxyClientSocket,
+   // True if the transport socket has ever sent data.
+   bool was_ever_used_ = false;
+ 
++  bool use_fastopen_ = false;
++  bool read_headers_pending_ = false;
++
+   const NetLogWithSource net_log_;
+   const NetLogSource source_dependency_;
+ 
+diff --git a/chromium/net/spdy/spdy_session.cc b/chromium/net/spdy/spdy_session.cc
+index bab7d9674..858ca288a 100644
+--- a/chromium/net/spdy/spdy_session.cc
++++ b/chromium/net/spdy/spdy_session.cc
+@@ -1805,6 +1805,25 @@ void SpdySession::EnqueueResetStreamFrame(spdy::SpdyStreamId stream_id,
+   DCHECK(buffered_spdy_framer_.get());
+   std::unique_ptr<spdy::SpdySerializedFrame> rst_frame(
+       buffered_spdy_framer_->CreateRstStream(stream_id, error_code));
++  // Can't send padding if the send window is very tight.
++  if (session_send_window_size_ >= 72) {
++    constexpr int kNonPaddingSize =
++        spdy::kDataFrameMinimumSize + spdy::kRstStreamFrameSize;
++    uint8_t padding_length = base::RandInt(48, 72) - kNonPaddingSize;
++    size_t expected_length = kNonPaddingSize + padding_length;
++    spdy::SpdyFrameBuilder builder(expected_length);
++    builder.BeginNewFrame(spdy::SpdyFrameType::DATA,
++                          spdy::DATA_FLAG_FIN | spdy::DATA_FLAG_PADDED,
++                          stream_id, padding_length);
++    builder.WriteUInt8(padding_length - 1);
++    std::string padding(padding_length - 1, 0);
++    builder.WriteBytes(padding.data(), padding.size());
++    builder.BeginNewFrame(spdy::SpdyFrameType::RST_STREAM, 0, stream_id, 4);
++    builder.WriteUInt32(error_code);
++    DCHECK_EQ(expected_length, builder.length());
++    rst_frame = std::make_unique<spdy::SpdySerializedFrame>(builder.take());
++    DecreaseSendWindowSize(padding_length);
++  }
+ 
+   EnqueueSessionWrite(priority, spdy::SpdyFrameType::RST_STREAM,
+                       std::move(rst_frame));
+@@ -2726,7 +2745,7 @@ void SpdySession::OnRstStream(spdy::SpdyStreamId stream_id,
+   auto it = active_streams_.find(stream_id);
+   if (it == active_streams_.end()) {
+     // NOTE:  it may just be that the stream was cancelled.
+-    LOG(WARNING) << "Received RST for invalid stream" << stream_id;
++    VLOG(1) << "Received RST for invalid stream" << stream_id;
+     return;
+   }
+ 
+@@ -2936,7 +2955,7 @@ void SpdySession::OnWindowUpdate(spdy::SpdyStreamId stream_id,
+ 
+     if (it == active_streams_.end()) {
+       // NOTE:  it may just be that the stream was cancelled.
+-      LOG(WARNING) << "Received WINDOW_UPDATE for invalid stream " << stream_id;
++      VLOG(1) << "Received WINDOW_UPDATE for invalid stream " << stream_id;
+       return;
+     }
+ 
+@@ -2981,7 +3000,7 @@ void SpdySession::OnHeaders(spdy::SpdyStreamId stream_id,
+   auto it = active_streams_.find(stream_id);
+   if (it == active_streams_.end()) {
+     // NOTE:  it may just be that the stream was cancelled.
+-    LOG(WARNING) << "Received HEADERS for invalid stream " << stream_id;
++    VLOG(1) << "Received HEADERS for invalid stream " << stream_id;
+     return;
+   }
+ 
+diff --git a/chromium/third_party/lss/linux_syscall_support.h b/chromium/third_party/lss/linux_syscall_support.h
+index 99a4b4449..d2dd77e0d 100644
+--- a/chromium/third_party/lss/linux_syscall_support.h
++++ b/chromium/third_party/lss/linux_syscall_support.h
+@@ -120,7 +120,7 @@ extern "C" {
+ 
+ #ifdef __mips__
+ /* Include definitions of the ABI currently in use.                          */
+-#ifdef __ANDROID__
++#if defined(__ANDROID__) || defined(__MUSL__)
+ /* Android doesn't have sgidefs.h, but does have asm/sgidefs.h,
+  * which has the definitions we need.
+  */
+@@ -141,12 +141,14 @@ extern "C" {
+ #pragma push_macro("stat64")
+ #pragma push_macro("fstat64")
+ #pragma push_macro("lstat64")
++#pragma push_macro("fstatat64")
+ #pragma push_macro("pread64")
+ #pragma push_macro("pwrite64")
+ #pragma push_macro("getdents64")
+ #undef stat64
+ #undef fstat64
+ #undef lstat64
++#undef fstatat64
+ #undef pread64
+ #undef pwrite64
+ #undef getdents64
+@@ -5322,6 +5324,7 @@ struct kernel_statx {
+ #pragma pop_macro("stat64")
+ #pragma pop_macro("fstat64")
+ #pragma pop_macro("lstat64")
++#pragma pop_macro("fstatat64")
+ #pragma pop_macro("pread64")
+ #pragma pop_macro("pwrite64")
+ #pragma pop_macro("getdents64")
+diff --git a/chromium/url/BUILD.gn b/chromium/url/BUILD.gn
+index 38713d28f..fc2593472 100644
+--- a/chromium/url/BUILD.gn
++++ b/chromium/url/BUILD.gn
+@@ -72,19 +72,11 @@ component("url") {
+   # ICU support.
+   if (use_platform_icu_alternatives) {
+     if (is_android) {
+-      sources += [ "url_idna_icu_alternatives_android.cc" ]
+-      deps += [
+-        ":buildflags",
+-        ":url_java",
+-        ":url_jni_headers",
+-        "//base",
+-        "//base/third_party/dynamic_annotations",
+-      ]
++      sources += [ "url_canon_icu_alternatives_dummy.cc" ]
+     } else if (is_ios) {
+       sources += [ "url_idna_icu_alternatives_ios.mm" ]
+     } else {
+-      assert(false,
+-             "ICU alternative is not implemented for platform: " + target_os)
++      sources += [ "url_canon_icu_alternatives_dummy.cc" ]
+     }
+   } else {
+     # Use ICU.
+diff --git a/chromium/url/url_canon_icu_alternatives_dummy.cc b/chromium/url/url_canon_icu_alternatives_dummy.cc
+new file mode 100644
+index 000000000..8b214198d
+--- /dev/null
++++ b/chromium/url/url_canon_icu_alternatives_dummy.cc
+@@ -0,0 +1,15 @@
++// Copyright 2013 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "base/notreached.h"
++#include "url/url_canon.h"
++
++namespace url {
++
++bool IDNToASCII(const char16_t* src, int src_len, CanonOutputW* output) {
++  NOTIMPLEMENTED();
++  return false;
++}
++
++}  // namespace url

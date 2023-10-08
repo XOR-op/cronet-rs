@@ -1,0 +1,97 @@
+diff --git a/chromium/components/cronet/BUILD.gn b/chromium/components/cronet/BUILD.gn
+index 94898336..268259d7 100644
+--- a/chromium/components/cronet/BUILD.gn
++++ b/chromium/components/cronet/BUILD.gn
+@@ -3,6 +3,7 @@
+ # found in the LICENSE file.
+ 
+ import("//build/buildflag_header.gni")
++import("//build/config/c++/c++.gni")
+ import("//build/toolchain/toolchain.gni")
+ import("//build/util/lastchange.gni")
+ import("//build/util/process_version.gni")
+@@ -76,12 +77,12 @@ source_set("metrics_util") {
+ # For platforms on which the native Cronet library is used, build the library,
+ # a cronet_tests binary that exercises it, and a unit-tests binary.
+ # Android and iOS have their own platform-specific rules to build Cronet.
+-if (is_android) {
++if (false) {
+   group("cronet_package") {
+     testonly = true
+     deps = [ "//components/cronet/android:cronet_package_android" ]
+   }
+-} else if (is_ios) {
++} else if (false) {
+   group("cronet_package") {
+     deps = [ "//components/cronet/ios:cronet_package_ios" ]
+   }
+@@ -94,15 +95,15 @@ if (is_android) {
+       "//net",
+     ]
+ 
+-#    if (use_custom_libcxx) {
+-#      deps += [
+-#      # Add shared_library_deps to include custom libc++ into dependencies.
+-#      # They are by default only added to executable(), loadable_module(), and
+-#      # shared_library() targets, but cronet_static_complete library needs it as well to
+-#      # avoid linking with different versions of libc++.
+-#        "//build/config:shared_library_deps",
+-#      ]
+-#    }
++    if (use_custom_libcxx) {
++      deps += [
++      # Add shared_library_deps to include custom libc++ into dependencies.
++      # They are by default only added to executable(), loadable_module(), and
++      # shared_library() targets, but cronet_static_complete library needs it as well to
++      # avoid linking with different versions of libc++.
++        "//build/config:shared_library_deps",
++      ]
++    }
+ 
+     sources = [ "cronet_global_state_stubs.cc" ]
+ 
+@@ -112,7 +113,13 @@ if (is_android) {
+ 
+   executable("cronet_example") {
+     testonly = true
+-    sources = [ "native/sample/bidi_example.cc" ]
++    sources = [
++        "native/sample/main.cc",
++        "native/sample/sample_executor.cc",
++        "native/sample/sample_executor.h",
++        "native/sample/sample_url_request_callback.cc",
++        "native/sample/sample_url_request_callback.h",
++    ]
+     deps = [
+       "//components/cronet",
+       "//components/cronet/native:cronet_native_headers",
+@@ -125,7 +132,13 @@ if (is_android) {
+   executable("cronet_example_external") {
+     testonly = true
+     no_default_deps = true
+-    sources = [ "native/sample/bidi_example.cc" ]
++    sources = [
++      "native/sample/main.cc",
++      "native/sample/sample_executor.cc",
++      "native/sample/sample_executor.h",
++      "native/sample/sample_url_request_callback.cc",
++      "native/sample/sample_url_request_callback.h",
++    ]
+     deps = [ ":cronet" ]
+     configs -= [
+       "//build/config:feature_flags",
+@@ -161,7 +174,13 @@ if (is_android) {
+   executable("cronet_example_external_static") {
+     testonly = true
+     no_default_deps = true
+-    sources = [ "native/sample/bidi_example.cc" ]
++    sources = [
++      "native/sample/main.cc",
++      "native/sample/sample_executor.cc",
++      "native/sample/sample_executor.h",
++      "native/sample/sample_url_request_callback.cc",
++      "native/sample/sample_url_request_callback.h",
++    ]
+     deps = [ ":cronet_static" ]
+     configs -= [
+       "//build/config:feature_flags",

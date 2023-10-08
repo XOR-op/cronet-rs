@@ -1,0 +1,15 @@
+/target
+/Cargo.lock
+.vscode
+.idea
+.DS_Store
+
+tools/include.tmp
+chromium/gn
+chromium/third_party/llvm-build/
+chromium/third_party/android_toolchain/
+chromium/out/
+chromium/chrome/build/pgo_profiles
+chromium/chrome/android/profiles/afdo.prof
+
+*.pyc

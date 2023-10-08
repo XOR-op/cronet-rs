@@ -1,0 +1,48 @@
+diff --git a/chromium/third_party/boringssl/BUILD.gn b/chromium/third_party/boringssl/BUILD.gn
+index f7d1e2e4..666cff90 100644
+--- a/chromium/third_party/boringssl/BUILD.gn
++++ b/chromium/third_party/boringssl/BUILD.gn
+@@ -10,7 +10,7 @@ import("//build_overrides/build.gni")
+ import("BUILD.generated.gni")
+ import("BUILD.generated_tests.gni")
+ 
+-if (enable_rust) {
++if (false) {
+   import("//build/rust/cargo_crate.gni")
+   import("//build/rust/rust_bindgen.gni")
+ }
+@@ -49,7 +49,7 @@ config("no_asm_config") {
+ all_sources = crypto_sources + ssl_sources
+ all_headers = crypto_headers + ssl_headers
+ 
+-if (enable_rust_boringssl) {
++if (false) {
+   rust_bindgen("raw_bssl_sys_bindings") {
+     header = "src/rust/bssl-sys/wrapper.h"
+     deps = [ ":boringssl" ]
+diff --git a/chromium/third_party/brotli/BUILD.gn b/chromium/third_party/brotli/BUILD.gn
+index 0aa74779..f02400f4 100644
+--- a/chromium/third_party/brotli/BUILD.gn
++++ b/chromium/third_party/brotli/BUILD.gn
+@@ -6,6 +6,8 @@ if (is_win) {
+   import("//build/config/win/visual_studio_version.gni")
+ }
+ 
++import("//build/config/sanitizers/sanitizers.gni")
++
+ config("brotli_defines") {
+   # By default, brotli depends on undefined behavior, but setting
+   # BROTLI_BUILD_PORTABLE should result in a build which does not.
+diff --git a/chromium/build/config/rust.gni b/chromium/build/config/rust.gni
+index 77313e00..0ce855d9 100644
+--- a/chromium/build/config/rust.gni
++++ b/chromium/build/config/rust.gni
+@@ -129,7 +129,7 @@ rustc_revision = ""
+
+ if (enable_rust) {
+   if (use_chromium_rust_toolchain) {
+-    toolchain_has_rust = chromium_toolchain_supports_platform
++#    toolchain_has_rust = chromium_toolchain_supports_platform
+     if (toolchain_has_rust) {
+       update_rust_args = [ "--print-package-version" ]
+       rustc_revision = exec_script("//tools/rust/update_rust.py",
