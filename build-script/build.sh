@@ -58,6 +58,7 @@ flags="$flags"'
   enable_backup_ref_ptr_support=false
   enable_dangling_raw_ptr_checks=false
 
+  is_cfi=false
   use_thin_lto=false
 '
 
