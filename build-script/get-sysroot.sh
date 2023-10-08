@@ -72,6 +72,7 @@ case "$ARCH" in
       CCACHE=ccache
     fi
 
+    WITH_GN=mac
     case "$CPU_ARCH" in
       arm64) WITH_CLANG=Mac_arm64;;
       *) WITH_CLANG=Mac;;
