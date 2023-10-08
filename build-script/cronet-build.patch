@@ -1,8 +1,3 @@
-diff --git a/build-script/cronet-build.patch b/build-script/cronet-build.patch
-index d5d944af..e69de29b 100644
---- a/build-script/cronet-build.patch
-+++ b/build-script/cronet-build.patch
-@@ -1,748 +0,0 @@
 --diff --git a/chromium/BUILD.gn b/chromium/BUILD.gn
 --index aba7412d..113041d0 100644
 ----- a/chromium/BUILD.gn
